@@ -1,0 +1,1375 @@
+<!doctype html>
+<!--
+  LaNotaMia 0.1 · notas de texto en tu propio servidor
+  Parte de la colección Alchemy of Meaning (Alquimia del Significado).
+  © 2026 Héctor Cruz Juárez · https://hectorcruz.com.mx
+  Software libre bajo licencia GPL-3.0-or-later.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#F8F7F3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="LaNotaMia">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png">
+<link rel="apple-touch-icon" href="icono-180.png">
+<title>LaNotaMia</title>
+<style>
+/* Cuaderno de colección: papel claro, tinta suave, fichas con etiqueta y un acento ámbar.
+   Tres superficies: estante (carpetas), fichero (lista) y hoja (nota). */
+:root{
+  --estante:#F1EFEA;--fichero:#F8F7F3;--hoja:#FFFFFF;
+  --tinta:#26241F;--suave:#7B766D;--tenue:#A9A398;
+  --linea:#E7E3DA;--l2:#DCD7CC;--l:#ECE8E0;
+  --acento:#C98A12;--acento-fondo:#FBEFCF;--acento-tinta:#8A5C00;
+  --sombra:0 1px 2px rgba(60,50,30,.06),0 8px 24px rgba(60,50,30,.08);
+  --ui:13px;--barra:44px;--fila:11px;--tam:17px;
+  --fuente:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --sistema:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+  --sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);
+  color-scheme:light;
+}
+@media (pointer:coarse){:root{--ui:15px;--barra:50px;--fila:14px}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--hoja);color:var(--tinta);font:var(--ui)/1.4 var(--sistema);-webkit-text-size-adjust:100%;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+body{height:100dvh;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+::selection{background:var(--acento-fondo);color:var(--tinta)}
+:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+
+/* ---------- piezas ---------- */
+.bt{background:var(--hoja);color:var(--tinta);border:1px solid var(--l2);padding:6px 12px;border-radius:8px;line-height:1.2;white-space:nowrap;transition:background .12s,border-color .12s}
+.bt:hover{background:var(--fichero);border-color:var(--tenue)}
+.bt:active,.bt.on{background:var(--acento-fondo);border-color:var(--acento);color:var(--acento-tinta)}
+.bt.lleno{background:var(--acento);border-color:var(--acento);color:#fff;font-weight:600}
+.bt.lleno:hover{background:#B87C0C}
+.bt:disabled{opacity:1;color:var(--tinta)}
+@media (pointer:coarse){.bt{padding:10px 14px}}
+.barra{height:calc(var(--barra) + var(--st));padding-top:var(--st);display:flex;align-items:center;gap:2px;flex:none;padding-left:8px;padding-right:8px}
+.barra b{font-weight:700;font-size:1.05em;padding:0 6px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
+.barra button{background:none;color:var(--acento-tinta);border:0;padding:0 10px;height:calc(var(--barra) - 12px);border-radius:8px;font-weight:500}
+.barra button:hover{background:rgba(201,138,18,.10)}
+.barra button:active,.barra button.on{background:var(--acento-fondo)}
+.barra .sep{width:1px;height:16px;background:var(--linea);margin:0 4px}
+.marca{color:var(--suave);background:none;border:0;padding:4px 0;text-align:left;font-size:.92em}
+.marca:hover{color:var(--acento-tinta)}
+input.campo{background:var(--hoja);border:1px solid var(--l2);padding:9px 12px;border-radius:10px;outline:none;width:100%;transition:border-color .12s,box-shadow .12s}
+input.campo::placeholder{color:var(--tenue)}
+@media (pointer:coarse){input.campo{font-size:16px;padding:11px 12px}}
+input.campo:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-fondo)}
+
+/* ---------- acceso ---------- */
+#acceso{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:var(--estante)}
+.ventana{border:1px solid var(--linea);background:var(--hoja);width:min(360px,100%);border-radius:14px;box-shadow:var(--sombra);overflow:hidden}
+.ventana .barra{height:var(--barra);padding-top:0;border-bottom:1px solid var(--linea)}
+.ventana .barra b{color:var(--tinta)}
+.ventana .cuerpo{padding:16px;display:grid;gap:12px}
+.ventana p{margin:0;color:var(--suave);line-height:1.5}
+.error{color:#A4371F;background:#FCEDE8;border-radius:8px;padding:8px 10px;min-height:1em}
+.error:empty{display:none}
+
+/* ---------- app: estante · fichero · hoja ---------- */
+#app{display:grid;grid-template-columns:220px 320px 1fr;height:100%;padding-left:var(--sl);padding-right:var(--sr)}
+#carpetas,#notas,#editor{display:flex;flex-direction:column;min-height:0;min-width:0}
+#carpetas{background:var(--estante);border-right:1px solid var(--linea)}
+#notas{background:var(--fichero);border-right:1px solid var(--linea)}
+#editor{background:var(--hoja)}
+
+/* estante de carpetas */
+#lista-carpetas{flex:1;overflow:auto;padding:4px 8px}
+.carp{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;padding:calc(var(--fila) - 3px) 10px;border-radius:9px;color:var(--tinta)}
+.carp:hover{background:rgba(0,0,0,.035)}
+.carp span:last-child{color:var(--suave);font-size:.88em;font-variant-numeric:tabular-nums;min-width:22px;text-align:center;padding:1px 6px;border-radius:20px}
+.carp.on{background:var(--acento-fondo);color:var(--acento-tinta);font-weight:600}
+.carp.on span:last-child{background:rgba(201,138,18,.18);color:var(--acento-tinta)}
+.carp.titulo{color:var(--tenue);cursor:default;padding-top:16px;padding-bottom:4px;font-size:.78em;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.carp.titulo:hover{background:none}
+.pie{padding:10px 12px calc(10px + var(--sb));display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--linea)}
+
+/* fichero de notas */
+.buscador{padding:2px 12px 10px}
+#lista{flex:1;overflow:auto;margin:0;padding:0 8px 8px;list-style:none}
+#lista li{padding:var(--fila) 12px;border-radius:10px;cursor:pointer;display:grid;gap:3px;position:relative}
+#lista li+li:not(.grupo)::before{content:"";position:absolute;left:12px;right:12px;top:0;border-top:1px solid var(--linea)}
+#lista li.on::before,#lista li.on+li::before{display:none}
+#lista li:hover:not(.grupo):not(.on){background:rgba(0,0,0,.025)}
+#lista li .t{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em}
+#lista li .p{color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.94em}
+#lista li .p i{font-style:normal;color:var(--tinta);margin-right:8px;font-variant-numeric:tabular-nums}
+#lista li.on{background:var(--acento-fondo)}
+#lista li.on .p i{color:var(--acento-tinta)}
+#lista li.grupo{cursor:default;color:var(--tenue);padding-top:14px;padding-bottom:4px;font-size:.78em;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+#lista li.grupo::before{display:none}
+.etq{display:inline-block;background:var(--hoja);border:1px solid var(--l2);color:var(--suave);padding:0 7px;margin-left:7px;font-weight:500;font-size:.8em;border-radius:20px;vertical-align:1px}
+#lista li.on .etq{border-color:rgba(201,138,18,.35);color:var(--acento-tinta)}
+#vacio{flex:1;display:grid;place-items:center;color:var(--suave);padding:20px;text-align:center}
+#estado{color:var(--suave);font-size:.88em}
+#estado #cuenta{color:var(--suave);font-size:.95em;font-variant-numeric:tabular-nums}
+#estado .izq{padding-left:4px}
+#estado .punto{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tenue);margin-right:7px;vertical-align:1px}
+#estado.ok .punto{background:#5E9C5A}
+#estado.fuera .punto{background:var(--acento)}
+#estado.trabajando .punto{background:var(--acento);animation:parpadeo 1s ease-in-out infinite}
+@keyframes parpadeo{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#estado.trabajando .punto{animation:none}}
+
+/* hoja */
+#editor .barra{border-bottom:1px solid transparent}
+#editor .barra b{color:var(--suave);font-weight:500;font-size:.95em;text-align:center}
+#editor .barra .acc{display:flex;gap:2px}
+#aviso{margin:0 16px;border-radius:10px;background:var(--acento-fondo);color:var(--acento-tinta);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+#aviso .bt{border-color:rgba(201,138,18,.4)}
+#hoja{flex:1;display:flex;min-height:0;overflow:hidden}
+#texto,#lectura{flex:1;width:100%;max-width:var(--ancho,100%);margin:0 auto;display:block;background:var(--hoja);border:0;outline:none;resize:none;
+  padding:18px 32px calc(28px + var(--sb));font-family:var(--fuente);font-size:var(--tam);line-height:1.6;color:var(--tinta);
+  caret-color:var(--acento);white-space:pre-wrap;overflow-wrap:break-word;tab-size:4}
+#texto::placeholder{color:var(--tenue)}
+#texto[readonly]{color:var(--suave)}
+#pie-editor .centro{color:var(--tenue);font-size:.85em;font-variant-numeric:tabular-nums;display:flex;gap:14px;justify-content:center;white-space:nowrap;overflow:hidden}
+#lectura{overflow:auto;cursor:text;min-height:0}
+#lectura:empty::before{content:attr(data-vacio);color:var(--tenue)}
+#lectura a{color:var(--acento-tinta);text-decoration:underline;text-decoration-color:rgba(201,138,18,.45);text-decoration-thickness:1.5px;text-underline-offset:3px;border-radius:3px}
+#lectura a:hover{background:var(--acento-fondo)}
+#lectura a.tel,#lectura a.mail{text-decoration-style:dotted}
+/* lista de tareas: el texto guarda ☐ / ☑ al inicio de la línea; en lectura se dibujan como círculos que se palomean */
+#lectura .caja{position:relative;display:inline-block;width:1.15em;height:1.15em;margin-right:.1em;vertical-align:-.2em;border:1.6px solid var(--tenue);border-radius:50%;color:transparent;overflow:hidden;cursor:pointer;line-height:1.15em;text-align:center;transition:background .12s,border-color .12s}
+#lectura .caja:hover{border-color:var(--acento)}
+#lectura .caja.si{background:var(--acento);border-color:var(--acento)}
+#lectura .caja.si::after{content:"";position:absolute;left:34%;top:16%;width:26%;height:46%;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+#lectura .hecha{color:var(--suave);text-decoration:line-through;text-decoration-color:var(--tenue)}
+@media (pointer:coarse){#lectura .caja{width:1.3em;height:1.3em;vertical-align:-.28em}}
+@media (prefers-reduced-motion:reduce){#lectura .caja{transition:none}}
+/* barras inferiores, como en Notas de Apple */
+.abajo{display:grid;grid-template-columns:minmax(64px,1fr) minmax(0,auto) minmax(64px,1fr);align-items:center;gap:8px;border-top:1px solid var(--linea);padding:6px 10px calc(6px + var(--sb));min-height:calc(var(--barra) + var(--sb))}
+.abajo .izq{display:flex;align-items:center;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.abajo .der{display:flex;justify-content:flex-end;grid-column:3}
+.abajo .centro{min-width:0}
+#pie-editor .izq{overflow:visible}
+.icono{background:none;border:0;color:var(--acento-tinta);width:38px;height:38px;border-radius:10px;display:inline-grid;place-items:center;padding:0;grid-auto-flow:column;gap:6px}
+.icono:hover{background:rgba(201,138,18,.10)}
+.icono:active{background:var(--acento-fondo)}
+.icono svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icono.rotulo{width:auto;padding:0 10px}
+.icono .rot{font-size:.95em}
+.icono:disabled{color:var(--tenue);background:none}
+@media (pointer:coarse){.icono{width:44px;height:44px}.icono svg{width:25px;height:25px}}
+/* adjuntos */
+#adjuntos{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;border-top:1px solid var(--linea);background:var(--fichero);scrollbar-width:thin}
+.adj{flex:none;display:flex;align-items:stretch;max-width:280px;background:var(--hoja);border:1px solid var(--linea);border-radius:12px;position:relative;overflow:hidden}
+.adj a{display:flex;align-items:center;gap:10px;padding:8px 4px 8px 10px;color:var(--tinta);text-decoration:none;min-width:0}
+.adj a:hover{background:var(--fichero)}
+.adj .ext{flex:none;width:36px;height:36px;border-radius:8px;background:var(--acento-fondo);color:var(--acento-tinta);display:grid;place-items:center;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;overflow:hidden;background-size:cover;background-position:center}
+.adj .adjTxt{display:grid;min-width:0}
+.adj b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.95em}
+.adj small{color:var(--suave);white-space:nowrap;font-size:.82em;font-variant-numeric:tabular-nums}
+.adj small.pronto{color:#A4371F}
+.adj .adjX{flex:none;background:none;border:0;color:var(--tenue);width:32px;font-size:18px;line-height:1;border-left:1px solid var(--linea)}
+.adj .adjX:hover{color:#A4371F;background:#FCEDE8}
+.adj.subiendo a{pointer-events:none}
+.adj .barraProg{position:absolute;left:0;bottom:0;height:3px;background:var(--acento);transition:width .2s}
+.adj.error{border-color:#E7B7A9}
+.adj.error small{color:#A4371F}
+#editor.soltar{box-shadow:inset 0 0 0 3px var(--acento);background:var(--acento-fondo)}
+.clip{display:inline-flex;align-items:center;gap:2px;color:var(--suave);margin-left:6px;font-weight:500;font-size:.85em}
+.clip svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+#bListo{font-weight:600}
+@media (pointer:fine){#bListo{display:none}}
+#sinNota{flex:1;display:grid;place-items:center;color:var(--tenue)}
+.btAtras{display:none}
+
+/* ---------- tableta: el estante se desliza ---------- */
+.btCarpetas{display:none}
+@media (max-width:1099px){
+  #app{grid-template-columns:320px 1fr}
+  #carpetas{position:fixed;z-index:20;left:0;top:0;bottom:0;width:min(270px,82vw);transform:translateX(-102%);transition:transform .2s ease;padding-left:var(--sl);box-shadow:var(--sombra)}
+  body.cajon #carpetas{transform:none}
+  body.cajon #velo{display:block}
+  .btCarpetas{display:inline-block}
+}
+#velo{display:none;position:fixed;inset:0;z-index:15;background:rgba(38,36,31,.25)}
+
+/* ---------- teléfono: una vista a la vez ---------- */
+@media (max-width:719px){
+  #app{grid-template-columns:1fr}
+  #notas{border-right:0}
+  #editor{display:none}
+  body.v-editor #notas{display:none}
+  body.v-editor #editor{display:flex}
+  .btAtras{display:inline-block}
+  #editor .barra .amplia{display:none}
+  #editor .barra b{text-align:left}
+  #texto,#lectura{padding:10px 18px 24px;font-size:max(16px,var(--tam))}
+  #pie-editor .centro{display:none}
+  #pie-editor .rot{display:none}
+  #estado .izq #estadoTexto{display:none}
+  #estado.fuera .izq #estadoTexto{display:inline;overflow:hidden;text-overflow:ellipsis}
+  #notas .barra b{font-size:1.6em;font-weight:800;letter-spacing:-.02em}
+  #notas .barra{height:calc(56px + var(--st))}
+}
+@media (min-width:720px){.solo-tel{display:none!important}}
+
+/* ---------- diálogos ---------- */
+#capa{position:fixed;inset:0;z-index:40;background:rgba(38,36,31,.28);display:grid;place-items:center;padding:16px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#capa .ventana{width:min(400px,100%);max-height:calc(100dvh - 32px);display:flex;flex-direction:column}
+#capa .cuerpo{overflow:auto}
+.opciones{display:grid;gap:2px}
+.opciones button{text-align:left;background:none;border:0;padding:var(--fila) 10px;border-radius:9px}
+.opciones button:hover{background:var(--fichero)}
+.opciones button:active,.opciones button.on{background:var(--acento-fondo);color:var(--acento-tinta)}
+.fila{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.ajuste{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--suave);flex-wrap:wrap}
+.seg{display:flex;background:var(--fichero);border:1px solid var(--linea);border-radius:9px;padding:2px;gap:2px}
+.seg .bt{border:0;background:none;border-radius:7px;padding:5px 10px}
+.seg .bt.on{background:var(--hoja);color:var(--tinta);box-shadow:0 1px 2px rgba(60,50,30,.12)}
+.acerca p{color:var(--tinta);margin:0 0 10px;line-height:1.55}
+.sesiones{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.sesiones li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px solid var(--linea)}
+.sesiones li:last-child{border-bottom:0}
+.sesTxt{display:grid;gap:2px;min-width:0}
+.sesTxt b{font-weight:600}
+.sesTxt small{color:var(--suave);font-size:.88em}
+.sesiones li.actual .etq{border-color:rgba(201,138,18,.35);color:var(--acento-tinta);background:var(--acento-fondo)}
+.acerca .g{color:var(--suave)}
+.acerca a{color:var(--acento-tinta)}
+#brindis{position:fixed;z-index:50;left:50%;top:calc(var(--st) + var(--barra) + 12px);transform:translateX(-50%);background:var(--tinta);color:#fff;padding:10px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);box-shadow:var(--sombra)}
+#brindis button{background:none;color:#F3C766;border:0;padding:2px 4px;font-weight:600}
+</style>
+</head>
+<body class="v-lista">
+
+<!-- acceso -->
+<div id="acceso" hidden>
+  <form class="ventana" id="fAcceso" autocomplete="on">
+    <div class="barra"><b id="aTitulo">LaNotaMia</b></div>
+    <div class="cuerpo">
+      <p id="aTexto">Escribe tu contraseña.</p>
+      <input type="text" name="username" value="lanotamia" autocomplete="username" hidden>
+      <input class="campo" id="aCodigo" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="código de instalación (está en config.php)" hidden>
+      <input class="campo" id="aClave" type="password" autocomplete="current-password" placeholder="contraseña" required>
+      <input class="campo" id="aClave2" type="password" autocomplete="new-password" placeholder="repite la contraseña" hidden>
+      <div class="error" id="aError"></div>
+      <div class="fila"><button class="bt lleno" id="aBoton" type="submit">entrar</button></div>
+      <button class="marca" type="button" data-acerca>i · LaNotaMia</button>
+    </div>
+  </form>
+</div>
+
+<!-- app -->
+<div id="app" hidden>
+  <aside id="carpetas">
+    <div class="barra"><b>Carpetas</b><button class="solo-tel btCarpetasCerrar" data-cerrar-cajon>cerrar</button></div>
+    <nav id="lista-carpetas"></nav>
+    <div class="pie">
+      <button class="bt" id="bNuevaCarpeta">+ carpeta</button>
+      <button class="bt" id="bAjustes">ajustes</button>
+      <span style="flex:1"></span>
+      <button class="marca" data-acerca>i · LaNotaMia</button>
+    </div>
+  </aside>
+
+  <section id="notas">
+    <div class="barra">
+      <button class="btCarpetas" id="bCajon" title="Carpetas">carpetas</button>
+      <b id="tituloCarpeta">Todas</b>
+    </div>
+    <div class="buscador"><input class="campo" id="buscar" type="search" placeholder="Buscar en todas las notas" autocomplete="off" spellcheck="false"></div>
+    <ul id="lista"></ul>
+    <div id="vacio" hidden></div>
+    <div id="estado" class="abajo"><span class="izq"><span class="punto"></span><span id="estadoTexto">…</span></span><span id="cuenta"></span><span class="der"><button class="icono" id="bNueva" title="Nota nueva (Alt+N)" aria-label="Nota nueva"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 4.5H6.8A2.3 2.3 0 0 0 4.5 6.8v10.4a2.3 2.3 0 0 0 2.3 2.3h10.4a2.3 2.3 0 0 0 2.3-2.3v-5.7"/><path d="M17.6 3.6a1.9 1.9 0 0 1 2.8 2.8l-7.6 7.6-3.6.8.8-3.6z"/></svg></button></span></div>
+  </section>
+
+  <main id="editor">
+    <div class="barra">
+      <button class="btAtras" id="bAtras">‹ notas</button>
+      <b id="tituloNota"></b>
+      <button id="bListo" hidden>listo</button>
+      <span class="acc" id="acciones">
+        <button class="amplia" data-acc="fijar">fijar</button>
+        <button class="amplia" data-acc="mover">mover</button>
+        <button class="amplia" data-acc="descargar">.txt</button>
+        <button class="amplia" data-acc="borrar">borrar</button>
+        <span class="sep amplia"></span>
+        <button data-acc="copiar" title="Copiar la nota completa (Ctrl/Cmd+Shift+C)">copiar</button>
+        <button class="solo-tel" data-acc="mas">···</button>
+      </span>
+      <span class="acc" id="accionesPapelera" hidden>
+        <button data-acc="restaurar">restaurar</button>
+        <button data-acc="purgar">borrar para siempre</button>
+      </span>
+    </div>
+    <div id="aviso" hidden></div>
+    <div id="hoja">
+      <div id="lectura" hidden data-vacio="Toca para escribir."></div>
+      <textarea id="texto" spellcheck="true" autocapitalize="sentences" autocomplete="off" hidden placeholder="Escribe. El título se toma solo de las primeras palabras."></textarea>
+      <div id="sinNota">Elige una nota o crea una nueva.</div>
+    </div>
+    <div id="adjuntos" hidden></div>
+    <div id="pie-editor" class="abajo">
+      <span class="izq"><button class="icono rotulo" id="bAdjuntar" title="Adjuntar archivos (hasta 20 MB, se borran al mes)" aria-label="Adjuntar archivo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.6l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4a3.4 3.4 0 0 1 4.8 4.8l-8.3 8.3a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/></svg><span class="rot">adjuntar</span></button><button class="icono rotulo" id="bTareas" title="Lista de tareas (Ctrl/Cmd+Shift+L)" aria-label="Lista de tareas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><path d="M4.9 16.9l1 1 2.1-2.3"/><circle cx="6.4" cy="17" r="2.4"/><path d="M11.5 7h8.5M11.5 17h8.5"/></svg><span class="rot">tareas</span></button></span>
+      <span class="centro"><span id="fechaNota"></span><span id="palabras"></span></span>
+      <span class="der"><button class="icono" id="bNueva2" title="Nota nueva (Alt+N)" aria-label="Nota nueva"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 4.5H6.8A2.3 2.3 0 0 0 4.5 6.8v10.4a2.3 2.3 0 0 0 2.3 2.3h10.4a2.3 2.3 0 0 0 2.3-2.3v-5.7"/><path d="M17.6 3.6a1.9 1.9 0 0 1 2.8 2.8l-7.6 7.6-3.6.8.8-3.6z"/></svg></button></span>
+    </div>
+    <input type="file" id="fArchivo" multiple hidden>
+  </main>
+</div>
+<div id="velo" data-cerrar-cajon></div>
+
+<div id="capa" hidden></div>
+<div id="brindis" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+// ======================================================================
+// estado
+// ======================================================================
+const CLAVE_LOCAL = 'lanotamia.v1';
+const S = {
+  notas: {},           // id → nota
+  carpetas: [],        // nombres
+  rev: 0,              // última revisión del servidor que vimos
+  pend: {},            // id → {ver, texto}  cambios aún sin subir
+  purgarPend: [],      // ids para borrar para siempre
+  carpetasPend: false,
+  archivos: {},        // id → ficha del adjunto {id, nota, nombre, tam, tipo, subido, expira}
+  actual: null,
+  vista: '*',          // '*' todas · '' notas sin carpeta · 'papelera' · nombre de carpeta
+  q: '',
+  ajustes: { tam: 16, fuente: 'arial', ancho: 'lectura' },
+};
+let enLinea = false, sesion = false;
+let modo = 'leer';                       // 'leer' (enlaces se pueden tocar) · 'editar'
+const subidas = {};                      // id temporal → {nota, nombre, tam, hecho, error, cancelar}
+const MB = 1048576, MAX_MB = 20;
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const nuevoId = () => 'n' + Date.now().toString(36) + '-' + Array.from(crypto.getRandomValues(new Uint8Array(4)), b => b.toString(16).padStart(2, '0')).join('');
+
+// ---------- guardado local (para abrir rápido y trabajar sin conexión) ----------
+let tGuardarLocal = 0;
+function guardarLocal(inmediato) {
+  clearTimeout(tGuardarLocal);
+  const f = () => {
+    try {
+      localStorage.setItem(CLAVE_LOCAL, JSON.stringify({
+        notas: S.notas, carpetas: S.carpetas, archivos: S.archivos, rev: S.rev, pend: S.pend,
+        purgarPend: S.purgarPend, carpetasPend: S.carpetasPend, actual: S.actual, vista: S.vista, ajustes: S.ajustes,
+      }));
+    } catch (e) { estado('error', 'sin espacio local'); }
+  };
+  inmediato ? f() : (tGuardarLocal = setTimeout(f, 250));
+}
+function cargarLocal() {
+  try {
+    const j = JSON.parse(localStorage.getItem(CLAVE_LOCAL) || 'null');
+    if (!j) return false;
+    Object.assign(S, {
+      notas: j.notas || {}, carpetas: j.carpetas || [], archivos: j.archivos || {}, rev: j.rev || 0, pend: j.pend || {},
+      purgarPend: j.purgarPend || [], carpetasPend: !!j.carpetasPend, actual: j.actual || null,
+      vista: j.vista ?? '*', ajustes: Object.assign(S.ajustes, j.ajustes || {}),
+    });
+    return true;
+  } catch (e) { return false; }
+}
+function borrarLocal() { try { localStorage.removeItem(CLAVE_LOCAL); } catch (e) {} }
+
+// ======================================================================
+// servidor
+// ======================================================================
+async function api(accion, datos, extra = '', opciones = {}) {
+  const init = datos === undefined
+    ? { credentials: 'same-origin', cache: 'no-store' }
+    : { method: 'POST', credentials: 'same-origin', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', 'X-LaNotaMia': '1' },
+        body: JSON.stringify(datos), keepalive: !!opciones.keepalive };
+  const r = await fetch('api.php?a=' + accion + extra, init);
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (r.status === 401 && j.sesion === false) { sesionPerdida(); throw Object.assign(new Error('sesión'), { sesion: true }); }
+  if (!r.ok) throw Object.assign(new Error(j.error || ('Error ' + r.status)), { status: r.status, datos: j });
+  return j;
+}
+
+// ---------- sincronización ----------
+let ocupado = false, otraVez = false, tEmpujar = 0;
+function programarSync(ms = 700) { clearTimeout(tEmpujar); tEmpujar = setTimeout(sincronizar, ms); }
+
+async function sincronizar() {
+  if (!sesion) return;
+  if (ocupado) { otraVez = true; return; }
+  ocupado = true;
+  estado('trabajando');
+  try {
+    await empujar();
+    await traer();
+    enLinea = true;
+    estado(Object.keys(S.pend).length ? 'trabajando' : 'ok');
+  } catch (e) {
+    if (!e.sesion) { enLinea = false; estado('fuera'); }
+  } finally {
+    ocupado = false;
+    guardarLocal();
+    if (otraVez) { otraVez = false; programarSync(50); }
+  }
+}
+
+async function empujar(keepalive) {
+  if (S.carpetasPend) {
+    await api('carpetas', { lista: S.carpetas }, '', { keepalive });
+    S.carpetasPend = false;
+  }
+  if (S.purgarPend.length) {
+    const ids = S.purgarPend.slice();
+    const rp = await api('purgar', { ids }, '', { keepalive });
+    (rp.archivos || []).forEach(a => delete S.archivos[a.id]);
+    S.purgarPend = S.purgarPend.filter(i => !ids.includes(i));
+  }
+  const ids = Object.keys(S.pend).filter(id => S.notas[id]);
+  Object.keys(S.pend).forEach(id => { if (!S.notas[id]) delete S.pend[id]; });
+  if (!ids.length) return;
+  const enviadas = {};
+  const lote = ids.map(id => {
+    const n = S.notas[id], p = S.pend[id];
+    enviadas[id] = p.ver;
+    return { id, texto: n.texto, carpeta: n.carpeta || '', fijada: !!n.fijada, borrada: !!n.borrada,
+             conflicto: !!n.conflicto, creada: n.creada, modificada: n.modificada, base: n.srv || 0, soloMeta: !p.texto };
+  });
+  const r = await api('guardar', { notas: lote }, '', { keepalive });
+  for (const x of r.resultados || []) {
+    const p = S.pend[x.id];
+    const siguioEditando = p && p.ver !== enviadas[x.id];
+    if (x.error) { delete S.pend[x.id]; continue; }
+
+    if (x.conflicto || x.reemplazo) {
+      // El servidor conservó su versión; lo de este equipo quedó en otra nota.
+      const nuevoIdN = x.conflicto || x.reemplazo;
+      const local = S.notas[x.id];
+      const copia = x.conflicto ? x.copia : x.nota;
+      if (siguioEditando && local) { copia.texto = local.texto; copia.modificada = local.modificada; S.pend[nuevoIdN] = { ver: 1, texto: true }; }
+      S.notas[nuevoIdN] = copia;
+      delete S.pend[x.id];
+      if (x.conflicto) S.notas[x.id] = x.nota; else delete S.notas[x.id];
+      if (S.actual === x.id) {
+        abrir(nuevoIdN, { conservarCursor: true });
+        if (x.conflicto) brindis('Esta nota cambió en otro equipo. Tu versión quedó como copia.');
+      }
+      continue;
+    }
+    const n = S.notas[x.id];
+    if (!n) continue;
+    if (siguioEditando) { n.srv = x.nota.srv; }        // la base avanza; lo nuevo se sube en la próxima vuelta
+    else { S.notas[x.id] = Object.assign(x.nota, { texto: n.texto }); delete S.pend[x.id]; }
+  }
+  pintar();
+}
+
+async function traer() {
+  const r = await api('cambios', undefined, '&desde=' + S.rev);
+  let tocaAbierta = false;
+  for (const n of r.notas || []) {
+    if (n.purgada) {
+      delete S.notas[n.id]; delete S.pend[n.id];
+      if (S.actual === n.id) { S.actual = null; tocaAbierta = true; }
+      continue;
+    }
+    if (S.pend[n.id]) continue;                         // hay cambios locales: los resuelve el servidor al subirlos
+    const antes = S.notas[n.id];
+    S.notas[n.id] = n;
+    if (S.actual === n.id && (!antes || antes.texto !== n.texto || antes.borrada !== n.borrada)) tocaAbierta = true;
+  }
+  for (const a of r.archivos || []) {
+    if (a.borrado) delete S.archivos[a.id]; else S.archivos[a.id] = a;
+    tocaAbierta = tocaAbierta || !!(S.notas[S.actual] && (a.borrado || a.nota === S.actual));
+  }
+  if (r.carpetas && !S.carpetasPend) S.carpetas = r.carpetas;
+  S.rev = r.rev;
+  pintar();
+  if (tocaAbierta) refrescarEditor(true);
+}
+
+// ======================================================================
+// notas
+// ======================================================================
+// El título sale solo: las primeras palabras del texto (hasta ~7 palabras o 48 letras).
+const MAX_TIT = 48, MAX_PAL = 7;
+const RE_CASILLA = /(^|\n)([ \t]*)[☐☑][ \t]?/g;
+const sinCasillas = t => (t || '').replace(RE_CASILLA, '$1$2');
+function partirTitulo(texto) {
+  texto = sinCasillas(texto);
+  const plano = (texto || '').replace(/\s+/g, ' ').trim();
+  if (!plano) return { tit: '', resto: '' };
+  const linea = (texto || '').split('\n').map(s => s.trim()).find(Boolean);
+  const palabras = linea.split(' ').filter(Boolean);
+  let tit = '';
+  for (const p of palabras.slice(0, MAX_PAL)) {
+    if (tit && (tit + ' ' + p).length > MAX_TIT) break;
+    tit = tit ? tit + ' ' + p : p;
+  }
+  if (!tit) tit = linea.slice(0, MAX_TIT);
+  const cortado = tit.length < linea.length;
+  tit = tit.replace(/[\s,;:.\-–—]+$/, '');
+  const resto = plano.slice(plano.indexOf(tit) + tit.length).replace(/^[\s,;:.\-–—]+/, '');
+  return { tit: cortado ? tit + '…' : tit, resto, cortado };
+}
+function archivosDe(id) { return Object.values(S.archivos).filter(a => a.nota === id); }
+function titulo(n) {
+  const t = partirTitulo(n.texto).tit;
+  if (t) return t;
+  const a = archivosDe(n.id)[0];
+  return a ? a.nombre : 'Nota nueva';
+}
+function resumen(n) {
+  const { tit, resto, cortado } = partirTitulo(n.texto);
+  if (!tit) { const k = archivosDe(n.id).length; return k ? (k === 1 ? '1 archivo adjunto' : k + ' archivos adjuntos') : 'sin texto'; }
+  const hechas = (n.texto.match(/(^|\n)[ \t]*☑/g) || []).length, total = hechas + (n.texto.match(/(^|\n)[ \t]*☐/g) || []).length;
+  const tareas = total ? hechas + ' de ' + total + ' hechas · ' : '';
+  return tareas + (cortado ? '…' : '') + (resto.slice(0, 160) || 'sin más texto');
+}
+function fecha(ms, larga) {
+  const d = new Date(ms), hoy = new Date();
+  const mismoDia = d.toDateString() === hoy.toDateString();
+  const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+  const hora = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  if (larga) return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + hora;
+  if (mismoDia) return hora;
+  if (d.toDateString() === ayer.toDateString()) return 'ayer';
+  if (hoy - d < 6 * 864e5) return d.toLocaleDateString('es-MX', { weekday: 'long' });
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+function marcar(n, cambioTexto) {
+  const p = S.pend[n.id] || { ver: 0, texto: false };
+  p.ver++; if (cambioTexto) p.texto = true;
+  S.pend[n.id] = p;
+  if (cambioTexto) n.modificada = Date.now();
+  guardarLocal();
+  programarSync(cambioTexto ? 700 : 100);
+}
+
+function nueva() {
+  const carpeta = ['*', 'papelera', 'archivos'].includes(S.vista) ? '' : S.vista;
+  const n = { id: nuevoId(), texto: '', carpeta, fijada: false, borrada: false, creada: Date.now(), modificada: Date.now(), srv: 0 };
+  S.notas[n.id] = n;
+  if (S.vista === 'papelera' || S.vista === 'archivos') S.vista = '*';
+  S.q = ''; $('#buscar').value = '';
+  abrir(n.id);
+  pintar();
+  editar(0);
+  return n;
+}
+
+// Una nota que se queda vacía al salir de ella se descarta, como en Notas.
+function descartarSiVacia(id) {
+  const n = S.notas[id];
+  if (!n || n.borrada || (n.texto || '').trim() || archivosDe(id).length || Object.values(subidas).some(x => x.nota === id && !x.error)) return;
+  delete S.notas[id];
+  delete S.pend[id];
+  if (n.srv) S.purgarPend.push(id);
+  guardarLocal(); programarSync(100);
+}
+
+function visibles() {
+  let a = Object.values(S.notas);
+  if (S.q.trim()) {
+    const q = norm(S.q.trim());
+    a = a.filter(n => !n.borrada && (norm(n.texto).includes(q) || archivosDe(n.id).some(x => norm(x.nombre).includes(q))));
+  } else if (S.vista === 'papelera') a = a.filter(n => n.borrada);
+  else if (S.vista === 'archivos') { const con = new Set(Object.values(S.archivos).map(x => x.nota)); a = a.filter(n => !n.borrada && con.has(n.id)); }
+  else {
+    a = a.filter(n => !n.borrada);
+    if (S.vista !== '*') a = a.filter(n => (n.carpeta || '') === S.vista);
+  }
+  return a.sort((x, y) => (!!y.fijada - !!x.fijada) || (y.modificada - x.modificada));
+}
+
+// ======================================================================
+// pintar
+// ======================================================================
+let rafPintar = 0;
+function pintar() { cancelAnimationFrame(rafPintar); rafPintar = requestAnimationFrame(pintarYa); }
+function pintarYa() {
+  // carpetas
+  const todas = Object.values(S.notas);
+  const vivas = todas.filter(n => !n.borrada);
+  const cuenta = c => vivas.filter(n => (n.carpeta || '') === c).length;
+  const carp = (id, nombre, num) =>
+    `<button class="carp${S.vista === id && !S.q ? ' on' : ''}" data-vista="${esc(id)}"><span>${esc(nombre)}</span><span>${num}</span></button>`;
+  const usadas = [...new Set([...S.carpetas, ...vivas.map(n => n.carpeta || '').filter(Boolean)])];
+  $('#lista-carpetas').innerHTML =
+    carp('*', 'Todas', vivas.length) + carp('', 'Notas', cuenta('')) +
+    (Object.keys(S.archivos).length ? carp('archivos', 'Con archivos', vivas.filter(n => archivosDe(n.id).length).length) : '') +
+    (usadas.length ? '<div class="carp titulo">mis carpetas</div>' : '') +
+    usadas.map(c => carp(c, c, cuenta(c))).join('') +
+    '<div class="carp titulo"> </div>' +
+    carp('papelera', 'Papelera', todas.filter(n => n.borrada).length);
+
+  // lista
+  const nombreVista = S.q.trim() ? 'Buscar' : S.vista === '*' ? 'Todas' : S.vista === '' ? 'Notas' : S.vista === 'papelera' ? 'Papelera' : S.vista === 'archivos' ? 'Con archivos' : S.vista;
+  $('#tituloCarpeta').textContent = nombreVista;
+  const lista = visibles();
+  const porNota = {};
+  Object.values(S.archivos).forEach(a => porNota[a.nota] = (porNota[a.nota] || 0) + 1);
+  const clips = id => porNota[id] ? `<span class="clip" title="archivos adjuntos">${CLIP_MINI}${porNota[id] > 1 ? porNota[id] : ''}</span>` : '';
+  let html = '', grupo = null;
+  for (const n of lista) {
+    const g = n.fijada && S.vista !== 'papelera' && !S.q ? 'fijadas' : (S.vista === 'papelera' ? 'en la papelera' : null);
+    if (g !== grupo && (g || grupo === 'fijadas')) { html += `<li class="grupo">${g || 'notas'}</li>`; }
+    grupo = g;
+    const extra = (S.vista === '*' || S.q) && n.carpeta ? `<span class="etq">${esc(n.carpeta)}</span>` : '';
+    html += `<li data-id="${n.id}" class="${n.id === S.actual ? 'on' : ''}">
+      <span class="t">${esc(titulo(n))}${clips(n.id)}${n.conflicto ? '<span class="etq">conflicto</span>' : ''}${extra}</span>
+      <span class="p"><i>${fecha(n.modificada)}</i>${esc(resumen(n))}</span></li>`;
+  }
+  $('#lista').innerHTML = html;
+  const vacio = $('#vacio');
+  vacio.hidden = lista.length > 0;
+  vacio.textContent = S.q.trim() ? 'Nada coincide con «' + S.q.trim() + '».' : S.vista === 'papelera' ? 'La papelera está vacía.' : 'Sin notas. Crea una con el botón de abajo.';
+  $('#lista').hidden = !lista.length;
+  $('#cuenta').textContent = lista.length + (lista.length === 1 ? ' nota' : ' notas');
+  $('#bNueva').hidden = S.vista === 'papelera' && !S.q;
+
+  // título del editor
+  const n = S.notas[S.actual];
+  if (n) {
+    $('#tituloNota').textContent = titulo(n);
+    $('#fechaNota').textContent = 'editada ' + fecha(n.modificada, true);
+    const palabras = (n.texto.match(/\S+/g) || []).length;
+    if (modo === 'leer' && !$('#lectura').hidden) pintarLectura();
+    $('#palabras').textContent = palabras + ' palabras · ' + n.texto.length + ' caracteres';
+    const f = $('[data-acc="fijar"]'); f.textContent = n.fijada ? 'desfijar' : 'fijar';
+  }
+}
+
+function refrescarEditor(desdeServidor) {
+  const n = S.notas[S.actual], ta = $('#texto');
+  const hay = !!n;
+  $('#sinNota').hidden = hay; $('#pie-editor').style.visibility = hay ? '' : 'hidden';
+  if (!hay) { ta.hidden = true; $('#lectura').hidden = true; $('#adjuntos').hidden = true; $('#bListo').hidden = true; }
+  $('#acciones').hidden = !hay || n.borrada; $('#accionesPapelera').hidden = !hay || !n.borrada;
+  const aviso = $('#aviso');
+  if (!hay) { $('#tituloNota').textContent = ''; aviso.hidden = true; if (desdeServidor) irA('lista'); return; }
+  if (ta.value !== n.texto) {
+    const a = ta.selectionStart, b = ta.selectionEnd, top = ta.scrollTop;
+    ta.value = n.texto;
+    if (desdeServidor && document.activeElement === ta) { ta.setSelectionRange(Math.min(a, ta.value.length), Math.min(b, ta.value.length)); ta.scrollTop = top; }
+  }
+  ta.readOnly = !!n.borrada;
+  if (n.borrada) modo = 'leer';
+  aplicarModo();
+  pintarAdjuntos();
+  $('#bAdjuntar').disabled = !!n.borrada;
+  if (n.borrada) { aviso.hidden = false; aviso.innerHTML = '<span>Esta nota está en la papelera.</span>'; }
+  else if (n.conflicto) {
+    aviso.hidden = false;
+    aviso.innerHTML = '<span>Copia por conflicto: esta nota se editó en dos equipos a la vez. Revisa y quédate con lo que sirva.</span><button class="bt" data-acc="resuelta">resuelta</button>';
+  } else aviso.hidden = true;
+  pintar();
+}
+
+function abrir(id, op = {}) {
+  if (S.actual && S.actual !== id) descartarSiVacia(S.actual);
+  S.actual = id;
+  const ta = $('#texto');
+  if (!op.conservarCursor) { ta.value = ''; modo = (S.notas[id] && S.notas[id].texto.trim()) ? 'leer' : 'editar'; }
+  refrescarEditor();
+  if (!op.conservarCursor) $('#lectura').scrollTop = 0;
+  if (!op.conservarCursor) { ta.scrollTop = 0; ta.setSelectionRange(0, 0); }
+  irA('editor');
+  guardarLocal();
+}
+
+// ---------- modo lectura: enlaces, correos y teléfonos se pueden tocar ----------
+const RE_ENLACE = /(\b(?:https?:\/\/|www\.)[^\s<>"']*[^\s<>"'.,;:!?)\]}»”])|([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|((?:\+|\b)\(?\d[\d \t().-]{6,18}\d\b)/g;
+const RE_FECHA = /^\d{1,4}[\/.-]\d{1,2}[\/.-]\d{1,4}$/;
+function enlazar(texto) {
+  let html = '', i = 0, m;
+  RE_ENLACE.lastIndex = 0;
+  while ((m = RE_ENLACE.exec(texto))) {
+    const [t, url, mail, tel] = m;
+    let a = null;
+    if (url) a = `<a href="${esc(/^www\./i.test(url) ? 'https://' + url : url)}" target="_blank" rel="noopener noreferrer">${esc(url)}</a>`;
+    else if (mail) a = `<a class="mail" href="mailto:${esc(mail)}">${esc(mail)}</a>`;
+    else if (tel) {
+      const dig = tel.replace(/\D/g, '');
+      if (dig.length >= 8 && dig.length <= 15 && !RE_FECHA.test(tel.trim()))
+        a = `<a class="tel" href="tel:${esc((tel.trim().startsWith('+') ? '+' : '') + dig)}">${esc(tel)}</a>`;
+    }
+    if (!a) continue;
+    html += esc(texto.slice(i, m.index)) + a;
+    i = m.index + t.length;
+  }
+  return html + esc(texto.slice(i));
+}
+function pintarLectura() {
+  const n = S.notas[S.actual]; if (!n) return;
+  const l = $('#lectura');
+  if (l._texto === n.texto) return;
+  l._texto = n.texto;
+  l.innerHTML = n.texto ? lecturaHTML(n.texto) : '';
+}
+// El texto del DOM es idéntico al de la nota (la casilla conserva su carácter, solo se oculta),
+// así un toque en cualquier parte cae en la misma posición al pasar a escribir.
+function lecturaHTML(texto) {
+  let pos = 0;
+  return texto.split('\n').map(linea => {
+    const m = /^([ \t]*)([☐☑])(.*)$/.exec(linea);
+    let h;
+    if (m) {
+      const i = pos + m[1].length, si = m[2] === '☑';
+      h = esc(m[1]) + `<span class="caja${si ? ' si' : ''}" data-i="${i}" role="checkbox" aria-checked="${si}" aria-label="${si ? 'hecha' : 'por hacer'}" tabindex="0">${m[2]}</span>` +
+        esc(/^[ \t]*/.exec(m[3])[0]) + `<span class="${si ? 'hecha' : ''}">${enlazar(m[3].replace(/^[ \t]*/, ''))}</span>`;
+    } else h = enlazar(linea);
+    pos += linea.length + 1;
+    return h;
+  }).join('\n');
+}
+function palomear(i) {
+  const n = S.notas[S.actual]; if (!n || n.borrada) return;
+  const c = n.texto[i]; if (c !== '☐' && c !== '☑') return;
+  n.texto = n.texto.slice(0, i) + (c === '☐' ? '☑' : '☐') + n.texto.slice(i + 1);
+  ta.value = n.texto;
+  marcar(n, true); estado('trabajando');
+  const l = $('#lectura'), arriba = l.scrollTop;
+  pintarLectura(); l.scrollTop = arriba;
+  const caja = l.querySelector(`.caja[data-i="${i}"]`); if (caja && document.activeElement && document.activeElement.classList.contains('caja')) caja.focus();
+  pintar();
+}
+// Convierte en tareas las líneas seleccionadas (o la línea actual). Si ya todas lo son, las vuelve texto.
+let ultimaSel = null;
+function alternarTareas() {
+  const n = S.notas[S.actual]; if (!n || n.borrada) return;
+  let a, b;
+  if (modo === 'editar' && ultimaSel && document.activeElement !== ta) ({ a, b } = ultimaSel);
+  else if (modo === 'editar') { a = ta.selectionStart; b = ta.selectionEnd; }
+  else {
+    const sel = getSelection(), l = $('#lectura');
+    if (sel && sel.rangeCount && !sel.isCollapsed && l.contains(sel.anchorNode)) {
+      const r = sel.getRangeAt(0), r0 = document.createRange();
+      r0.setStart(l, 0); r0.setEnd(r.startContainer, r.startOffset); a = r0.toString().length;
+      b = a + r.toString().length;
+    } else a = b = n.texto.length;
+  }
+  if (modo !== 'editar') editar(b);
+  ta.focus({ preventScroll: true });
+  const v = ta.value;
+  const ini = v.lastIndexOf('\n', a - 1) + 1;
+  let fin = v.indexOf('\n', b > a && v[b - 1] === '\n' ? b - 1 : b); if (fin < 0) fin = v.length;
+  const bloque = v.slice(ini, fin), lineas = bloque.split('\n');
+  const RE = /^([ \t]*)[☐☑][ \t]?/;
+  const conTexto = lineas.filter(x => x.trim());
+  const quitar = conTexto.length > 0 && conTexto.every(x => RE.test(x));
+  const nuevas = quitar ? lineas.map(x => x.replace(RE, '$1'))
+    : lineas.map(x => RE.test(x) || (!x.trim() && lineas.length > 1) ? x : x.replace(/^([ \t]*)(?:[-*•][ \t]+)?/, '$1☐ '));
+  const nuevo = nuevas.join('\n');
+  ta.setSelectionRange(ini, fin);
+  if (!document.execCommand('insertText', false, nuevo)) { ta.setRangeText(nuevo, ini, fin, 'end'); ta.dispatchEvent(new Event('input')); }
+  if (a === b) { const p = Math.max(ini, Math.min(ini + nuevo.length, b + nuevo.length - bloque.length)); ta.setSelectionRange(p, p); }
+  else ta.setSelectionRange(ini, ini + nuevo.length);
+  ultimaSel = null;
+}
+function aplicarModo() {
+  const n = S.notas[S.actual]; if (!n) return;
+  const l = $('#lectura');
+  if (modo === 'leer') pintarLectura();
+  l.hidden = modo !== 'leer'; ta.hidden = modo === 'leer';
+  $('#bListo').hidden = modo !== 'editar';
+}
+function editar(pos) {
+  const n = S.notas[S.actual]; if (!n || n.borrada) return;
+  const l = $('#lectura'), arriba = l.scrollTop;
+  modo = 'editar'; aplicarModo();
+  ta.focus({ preventScroll: true });
+  const p = pos == null ? ta.value.length : Math.min(pos, ta.value.length);
+  ta.setSelectionRange(p, p);
+  if (pos != null) ta.scrollTop = arriba;
+}
+function leer() {
+  if (modo === 'leer') return;
+  const arriba = ta.scrollTop;
+  modo = 'leer'; aplicarModo();
+  $('#lectura').scrollTop = arriba;
+}
+// posición en el texto del punto donde se tocó la lectura
+function posicionEn(x, y) {
+  const l = $('#lectura');
+  let nodo, off;
+  if (document.caretPositionFromPoint) { const c = document.caretPositionFromPoint(x, y); if (c) { nodo = c.offsetNode; off = c.offset; } }
+  else if (document.caretRangeFromPoint) { const r = document.caretRangeFromPoint(x, y); if (r) { nodo = r.startContainer; off = r.startOffset; } }
+  if (!nodo || !l.contains(nodo)) return null;
+  const r = document.createRange(); r.setStart(l, 0); r.setEnd(nodo, off);
+  return r.toString().length;
+}
+
+// ---------- archivos adjuntos ----------
+const CLIP_MINI = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.6l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4a3.4 3.4 0 0 1 4.8 4.8l-8.3 8.3a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/></svg>';
+function tamano(b) { return b < 1024 ? b + ' B' : b < MB ? Math.round(b / 1024) + ' KB' : (b / MB).toFixed(b < 10 * MB ? 1 : 0) + ' MB'; }
+function vence(ms) {
+  const d = Math.ceil((ms - Date.now()) / 864e5);
+  return d <= 0 ? 'se borra hoy' : d === 1 ? 'se borra mañana' : 'se borra en ' + d + ' días';
+}
+function extension(nombre) { const m = /\.([a-z0-9]{1,5})$/i.exec(nombre || ''); return m ? m[1] : 'arch'; }
+function pintarAdjuntos() {
+  const n = S.notas[S.actual], caja = $('#adjuntos');
+  if (!n) { caja.hidden = true; return; }
+  const lista = archivosDe(n.id).sort((a, b) => a.subido - b.subido);
+  const sub = Object.entries(subidas).filter(([, x]) => x.nota === n.id);
+  caja.hidden = !lista.length && !sub.length;
+  caja.innerHTML = lista.map(a => {
+    const img = /^image\/(png|jpeg|gif|webp|avif)$/.test(a.tipo) ? ` style="background-image:url('api.php?a=archivo&amp;ver=1&amp;id=${a.id}')"` : '';
+    const pronto = a.expira - Date.now() < 3 * 864e5;
+    return `<div class="adj" data-f="${a.id}"><a href="api.php?a=archivo&amp;id=${a.id}" download="${esc(a.nombre)}" title="Descargar ${esc(a.nombre)}">
+      <span class="ext"${img}>${img ? '' : esc(extension(a.nombre))}</span>
+      <span class="adjTxt"><b>${esc(a.nombre)}</b><small class="${pronto ? 'pronto' : ''}">${tamano(a.tam)} · ${vence(a.expira)}</small></span></a>
+      <button class="adjX" data-borrar-f="${a.id}" title="Borrar archivo" aria-label="Borrar ${esc(a.nombre)}">×</button></div>`;
+  }).join('') + sub.map(([k, x]) => `<div class="adj subiendo${x.error ? ' error' : ''}" data-s="${k}"><a>
+      <span class="ext">${esc(extension(x.nombre))}</span>
+      <span class="adjTxt"><b>${esc(x.nombre)}</b><small>${x.error ? esc(x.error) : 'subiendo ' + Math.floor(100 * x.hecho / Math.max(1, x.tam)) + ' % de ' + tamano(x.tam)}</small></span></a>
+      <button class="adjX" data-cancelar-s="${k}" title="${x.error ? 'Quitar' : 'Cancelar'}" aria-label="Cancelar">×</button>
+      ${x.error ? '' : `<span class="barraProg" style="width:${100 * x.hecho / Math.max(1, x.tam)}%"></span>`}</div>`).join('');
+}
+async function subirArchivos(archivos, nota) {
+  archivos = [...archivos];
+  if (!archivos.length) return;
+  if (!nota) { nota = nueva(); ta.blur(); modo = 'leer'; aplicarModo(); }
+  if (nota.borrada) return;
+  if (!sesion || !navigator.onLine) { brindis('Para subir archivos necesitas conexión.'); return; }
+  // que la nota exista en el servidor aunque no tenga texto
+  if (!nota.srv) marcar(nota, false);
+  for (const f of archivos) {
+    const k = 's' + Math.random().toString(36).slice(2);
+    subidas[k] = { nota: nota.id, nombre: f.name || 'archivo', tam: f.size, hecho: 0 };
+    if (f.size > MAX_MB * MB) { subidas[k].error = 'pasa de ' + MAX_MB + ' MB'; pintarAdjuntos(); continue; }
+    pintarAdjuntos();
+    try {
+      const ini = await api('subir-inicio', { nota: nota.id, nombre: f.name, tam: f.size, tipo: f.type || '' });
+      subidas[k].id = ini.id;
+      const parte = ini.parte || MB;
+      for (let desde = 0; desde < f.size || (f.size === 0 && desde === 0); desde += parte) {
+        if (subidas[k].cancelar) throw new Error('cancelada');
+        let intento = 0;
+        for (;;) {
+          try {
+            const r = await fetch('api.php?a=subir-parte&id=' + ini.id + '&desde=' + desde, {
+              method: 'POST', credentials: 'same-origin', cache: 'no-store',
+              headers: { 'Content-Type': 'application/octet-stream', 'X-LaNotaMia': '1' }, body: f.slice(desde, desde + parte) });
+            if (!r.ok) { const j = await r.json().catch(() => ({})); throw Object.assign(new Error(j.error || 'Error ' + r.status), { status: r.status }); }
+            break;
+          } catch (e) {
+            if (e.status && e.status < 500) throw e;
+            if (++intento > 3) throw e;
+            await new Promise(z => setTimeout(z, 800 * intento));
+          }
+        }
+        subidas[k].hecho = Math.min(f.size, desde + parte); pintarAdjuntos();
+        if (f.size === 0) break;
+      }
+      const fin = await api('subir-fin', { id: ini.id });
+      S.archivos[fin.archivo.id] = fin.archivo;
+      delete subidas[k];
+      guardarLocal();
+    } catch (e) {
+      if (e.message === 'cancelada') { delete subidas[k]; }
+      else subidas[k].error = e.message || 'no se pudo subir';
+      if (subidas[k] && subidas[k].id) api('subir-cancelar', { id: subidas[k].id }).catch(() => {});
+    }
+    pintarAdjuntos(); pintar();
+  }
+  if (!Object.values(subidas).some(x => !x.error)) brindis(archivos.length === 1 ? 'Archivo listo. Se borra solo en 30 días.' : 'Archivos listos. Se borran solos en 30 días.');
+}
+async function borrarAdjunto(id) {
+  const a = S.archivos[id]; if (!a) return;
+  if (!(await confirmar('«' + a.nombre + '» se borrará de todos tus equipos. La nota se queda.', 'borrar archivo'))) return;
+  try { await api('borrar-archivo', { id }); delete S.archivos[id]; guardarLocal(); pintarAdjuntos(); pintar(); }
+  catch (e) { brindis(e.sesion ? 'Inicia sesión para borrar.' : 'Sin conexión: no se pudo borrar.'); }
+}
+
+function irA(v) {
+  document.body.classList.toggle('v-editor', v === 'editor');
+  document.body.classList.toggle('v-lista', v !== 'editor');
+  document.body.classList.remove('cajon');
+}
+
+const ESTADOS = { ok: 'sincronizado', trabajando: 'guardando…', fuera: 'sin conexión · guardado en este equipo', error: 'error' };
+function estado(tipo, texto) {
+  const e = $('#estado');
+  e.className = 'abajo ' + tipo;
+  $('#estadoTexto').textContent = texto || ESTADOS[tipo] || '';
+}
+
+function aplicarAjustes() {
+  const r = document.documentElement.style, a = S.ajustes;
+  r.setProperty('--tam', a.tam + 'px');
+  r.setProperty('--fuente', { arial: 'Arial,Helvetica,sans-serif', courier: '"Courier New",Courier,monospace', georgia: 'Georgia,"Times New Roman",serif' }[a.fuente] || 'Arial');
+  r.setProperty('--ancho', a.ancho === 'lectura' ? '760px' : '100%');
+}
+
+// ======================================================================
+// diálogos
+// ======================================================================
+function dialogo(tituloD, html, alAbrir) {
+  const capa = $('#capa');
+  capa.innerHTML = `<div class="ventana" role="dialog" aria-modal="true"><div class="barra"><b>${esc(tituloD)}</b><button data-cerrar>listo</button></div><div class="cuerpo">${html}</div></div>`;
+  capa.hidden = false;
+  const cerrar = () => { capa.hidden = true; capa.innerHTML = ''; };
+  capa.onclick = e => { if (e.target === capa || e.target.closest('[data-cerrar]')) cerrar(); };
+  alAbrir && alAbrir(capa, cerrar);
+  const f = capa.querySelector('input,button.on,.opciones button');
+  if (f && matchMedia('(pointer:fine)').matches) f.focus();
+  return cerrar;
+}
+function pedir(tituloD, valor = '', boton = 'aceptar') {
+  return new Promise(res => {
+    dialogo(tituloD, `<form id="fPedir" style="display:grid;gap:10px"><input class="campo" id="pValor" value="${esc(valor)}" autocomplete="off"><div class="fila"><button class="bt" type="button" data-cerrar>cancelar</button><button class="bt lleno">${esc(boton)}</button></div></form>`,
+      (capa, cerrar) => {
+        const i = capa.querySelector('#pValor'); i.focus(); i.select();
+        capa.querySelector('#fPedir').onsubmit = e => { e.preventDefault(); const v = i.value.trim(); cerrar(); res(v || null); };
+        const prev = capa.onclick; capa.onclick = e => { if (e.target === capa || e.target.closest('[data-cerrar]')) res(null); prev(e); };
+      });
+  });
+}
+function confirmar(texto, boton) {
+  return new Promise(res => {
+    dialogo('confirmar', `<p>${esc(texto)}</p><div class="fila"><button class="bt" data-cerrar>cancelar</button><button class="bt lleno" id="cSi">${esc(boton)}</button></div>`,
+      (capa, cerrar) => {
+        capa.querySelector('#cSi').onclick = () => { cerrar(); res(true); };
+        const prev = capa.onclick; capa.onclick = e => { if (e.target === capa || e.target.closest('[data-cerrar]')) res(false); prev(e); };
+      });
+  });
+}
+let tBrindis = 0;
+function brindis(texto, accion, fn) {
+  const b = $('#brindis');
+  b.innerHTML = '<span>' + esc(texto) + '</span>' + (accion ? '<button>' + esc(accion) + '</button>' : '');
+  b.hidden = false;
+  if (accion) b.querySelector('button').onclick = () => { b.hidden = true; fn(); };
+  clearTimeout(tBrindis); tBrindis = setTimeout(() => b.hidden = true, accion ? 6000 : 3200);
+}
+
+async function copiar(texto) {
+  try { await navigator.clipboard.writeText(texto); }
+  catch (e) {
+    const t = document.createElement('textarea'); t.value = texto; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove();
+  }
+  brindis('Nota copiada');
+}
+
+function elegirCarpeta(n) {
+  const op = ['', ...new Set([...S.carpetas, ...Object.values(S.notas).map(x => x.carpeta || '').filter(Boolean)])];
+  dialogo('mover a', `<div class="opciones">${op.map(c => `<button data-c="${esc(c)}" class="${(n.carpeta || '') === c ? 'on' : ''}">${c ? esc(c) : 'Notas (sin carpeta)'}</button>`).join('')}<button data-nueva>+ carpeta nueva…</button></div>`,
+    (capa, cerrar) => {
+      capa.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { n.carpeta = b.dataset.c; marcar(n, false); cerrar(); pintar(); brindis('Movida a ' + (n.carpeta || 'Notas')); });
+      capa.querySelector('[data-nueva]').onclick = async () => {
+        cerrar(); const c = await pedir('carpeta nueva', '', 'crear');
+        if (c) { if (!S.carpetas.includes(c)) { S.carpetas.push(c); S.carpetasPend = true; } n.carpeta = c; marcar(n, false); pintar(); }
+      };
+    });
+}
+
+function menuCarpeta(c) {
+  dialogo('carpeta · ' + c, `<div class="opciones"><button data-o="renombrar">renombrar</button><button data-o="borrar">borrar carpeta (sus notas pasan a «Notas»)</button></div>`, (capa, cerrar) => {
+    capa.querySelector('[data-o="renombrar"]').onclick = async () => {
+      cerrar(); const nombre = await pedir('renombrar carpeta', c, 'renombrar');
+      if (!nombre || nombre === c) return;
+      S.carpetas = S.carpetas.map(x => x === c ? nombre : x); if (!S.carpetas.includes(nombre)) S.carpetas.push(nombre);
+      S.carpetas = [...new Set(S.carpetas)];
+      S.carpetasPend = true;
+      Object.values(S.notas).forEach(n => { if ((n.carpeta || '') === c) { n.carpeta = nombre; marcar(n, false); } });
+      S.vista = nombre; pintar(); guardarLocal(); programarSync(100);
+    };
+    capa.querySelector('[data-o="borrar"]').onclick = () => {
+      cerrar();
+      S.carpetas = S.carpetas.filter(x => x !== c); S.carpetasPend = true;
+      Object.values(S.notas).forEach(n => { if ((n.carpeta || '') === c) { n.carpeta = ''; marcar(n, false); } });
+      S.vista = '*'; pintar(); guardarLocal(); programarSync(100);
+    };
+  });
+}
+
+function abrirAjustes() {
+  const a = S.ajustes;
+  const seg = (k, ops) => `<span class="seg">${ops.map(([v, t]) => `<button class="bt${a[k] === v ? ' on' : ''}" data-k="${k}" data-v="${v}">${t}</button>`).join('')}</span>`;
+  dialogo('ajustes', `
+    <div class="ajuste">tamaño de letra <span class="seg"><button class="bt" data-tam="-1">A−</button><button class="bt" id="tamV" disabled>${a.tam}</button><button class="bt" data-tam="1">A+</button></span></div>
+    <div class="ajuste">tipografía ${seg('fuente', [['arial', 'Arial'], ['courier', 'Courier'], ['georgia', 'Georgia']])}</div>
+    <div class="ajuste">ancho del texto ${seg('ancho', [['lectura', 'lectura'], ['completo', 'completo']])}</div>
+    <hr style="border:0;border-top:1px solid var(--l2);width:100%">
+    <div class="opciones">
+      <button data-o="exportar">descargar todas las notas (.json)</button>
+      <button data-o="clave">cambiar contraseña</button>
+      <button data-o="sesiones">sesiones abiertas en otros equipos…</button>
+      <button data-o="salir">cerrar sesión en este equipo</button>
+    </div>`, (capa, cerrar) => {
+    capa.querySelectorAll('[data-tam]').forEach(b => b.onclick = () => {
+      a.tam = Math.max(12, Math.min(26, a.tam + +b.dataset.tam)); capa.querySelector('#tamV').textContent = a.tam; aplicarAjustes(); guardarLocal();
+    });
+    capa.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+      a[b.dataset.k] = b.dataset.v;
+      capa.querySelectorAll(`[data-k="${b.dataset.k}"]`).forEach(x => x.classList.toggle('on', x === b));
+      aplicarAjustes(); guardarLocal();
+    });
+    capa.querySelector('[data-o="exportar"]').onclick = () => { location.href = 'api.php?a=exportar'; };
+    capa.querySelector('[data-o="clave"]').onclick = () => { cerrar(); cambiarClave(); };
+    capa.querySelector('[data-o="sesiones"]').onclick = () => { cerrar(); abrirSesiones(); };
+    capa.querySelector('[data-o="salir"]').onclick = async () => {
+      cerrar();
+      const pendientes = Object.keys(S.pend).length;
+      if (pendientes && !(await confirmar(`Hay ${pendientes} cambio(s) sin subir. Si sales ahora se pierden en este equipo.`, 'salir de todos modos'))) return;
+      try { await api('salir', {}); } catch (e) {}
+      borrarLocal(); location.reload();
+    };
+  });
+}
+
+// ---------- sesiones abiertas ----------
+function nombreEquipo(ua) {
+  ua = ua || '';
+  const so = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
+    : /Windows/.test(ua) ? 'Windows' : /Macintosh|Mac OS X/.test(ua) ? 'Mac' : /CrOS/.test(ua) ? 'Chromebook' : /Linux/.test(ua) ? 'Linux' : 'Equipo';
+  const nav = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox|FxiOS/.test(ua) ? 'Firefox'
+    : /CriOS|Chrome\//.test(ua) ? 'Chrome o Brave' : /Safari/.test(ua) ? 'Safari' : 'navegador';
+  return so + ' · ' + nav;
+}
+function haceCuanto(seg) {
+  const d = Date.now() / 1000 - seg;
+  if (d < 900) return 'en uso ahora';
+  if (d < 3600) return 'hace ' + Math.round(d / 60) + ' min';
+  if (d < 86400) return 'hace ' + Math.round(d / 3600) + ' h';
+  const dias = Math.round(d / 86400);
+  return dias === 1 ? 'ayer' : 'hace ' + dias + ' días';
+}
+async function abrirSesiones() {
+  const cuerpo = lista => {
+    const otras = lista.filter(x => !x.actual);
+    return `<p>Los equipos donde LaNotaMia tiene la sesión abierta. Al cerrar una, ese equipo tendrá que volver a escribir la contraseña.</p>
+      <ul class="sesiones">${lista.map(x => `<li class="${x.actual ? 'actual' : ''}">
+        <span class="sesTxt"><b>${esc(nombreEquipo(x.ua))}</b><small>${x.actual ? 'este equipo' : esc(haceCuanto(x.visto))} · entró el ${new Date(x.creada * 1000).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
+        ${x.actual ? '<span class="etq">este</span>' : `<button class="bt" data-cerrar-ses="${x.id}">cerrar</button>`}</li>`).join('')}</ul>
+      <div class="fila">${otras.length > 1 ? `<button class="bt lleno" id="sTodas">cerrar las ${otras.length} demás</button>` : ''}${otras.length ? '' : '<p>No hay sesiones abiertas en otros equipos.</p>'}</div>`;
+  };
+  let lista;
+  try { lista = (await api('sesiones')).sesiones; } catch (e) { if (!e.sesion) brindis('Sin conexión: no se pudo leer la lista de sesiones.'); return; }
+  dialogo('sesiones abiertas', cuerpo(lista), (capa, cerrar) => {
+    const conectar = () => {
+      capa.querySelectorAll('[data-cerrar-ses]').forEach(b => b.onclick = async () => {
+        b.disabled = true; b.textContent = '…';
+        try { await api('cerrar-sesion', { id: b.dataset.cerrarSes }); lista = lista.filter(x => x.id !== b.dataset.cerrarSes);
+              capa.querySelector('.cuerpo').innerHTML = cuerpo(lista); conectar(); brindis('Sesión cerrada en ese equipo.'); }
+        catch (e) { b.disabled = false; b.textContent = 'cerrar'; brindis(e.message); }
+      });
+      const t = capa.querySelector('#sTodas');
+      if (t) t.onclick = async () => {
+        t.disabled = true;
+        try { await api('cerrar-todo', {}); lista = lista.filter(x => x.actual); capa.querySelector('.cuerpo').innerHTML = cuerpo(lista); conectar(); brindis('Listo: solo este equipo sigue dentro.'); }
+        catch (e) { t.disabled = false; brindis(e.message); }
+      };
+    };
+    conectar();
+  });
+}
+
+function cambiarClave() {
+  dialogo('cambiar contraseña', `<form id="fClave" style="display:grid;gap:10px">
+    <input class="campo" id="cActual" type="password" placeholder="contraseña actual" autocomplete="current-password" required>
+    <input class="campo" id="cNueva" type="password" placeholder="nueva (mín. 8)" autocomplete="new-password" required minlength="8">
+    <input class="campo" id="cNueva2" type="password" placeholder="repite la nueva" autocomplete="new-password" required>
+    <div class="error" id="cError"></div>
+    <p>Al cambiarla se cierran las sesiones de los demás equipos.</p>
+    <div class="fila"><button class="bt" type="button" data-cerrar>cancelar</button><button class="bt lleno">cambiar</button></div></form>`, (capa, cerrar) => {
+    capa.querySelector('#fClave').onsubmit = async e => {
+      e.preventDefault();
+      const n1 = capa.querySelector('#cNueva').value, n2 = capa.querySelector('#cNueva2').value, err = capa.querySelector('#cError');
+      if (n1 !== n2) { err.textContent = 'Las nuevas no coinciden.'; return; }
+      try { await api('clave', { actual: capa.querySelector('#cActual').value, nueva: n1 }); cerrar(); brindis('Contraseña cambiada.'); }
+      catch (x) { err.textContent = x.message; }
+    };
+  });
+}
+
+function acerca() {
+  dialogo('i · LaNotaMia', `<div class="acerca">
+    <p><b>LaNotaMia</b> 0.4 · notas de texto en tu propio servidor, iguales en el teléfono, la tableta y cualquier computadora. Adjunta archivos de hasta 20 MB para pasarlos entre equipos: se borran solos al mes.</p>
+    <p>Diseño, investigación y desarrollo: <b>Héctor Cruz Juárez</b> — <a href="https://hectorcruz.com.mx" target="_blank" rel="noopener">https://hectorcruz.com.mx</a><br><span class="g">Colección Alchemy of Meaning.</span></p>
+    <p><b>Héctor Cruz Juárez</b> es diseñador multimedia y de proyección para artes escénicas, con más de 26 años de trayectoria y más de 110 producciones en distintos países. Director de arte multimedia de Landscape Artes Escénicas, cofundador de Meridiano Studio y de la comunidad Resonancias, Embajador de Isadora para América Latina y creador de la metodología TCRV (World Summit Award, WSA, 2020). Miembro del Sistema Nacional de Creadores de Arte.</p>
+    <p class="g">© 2026 Héctor Cruz Juárez. Software libre: puedes usarlo, estudiarlo, modificarlo y compartirlo bajo los términos de la licencia GNU GPL versión 3 o posterior (GPL-3.0-or-later). Se ofrece sin ninguna garantía.</p>
+  </div>`);
+}
+
+// ======================================================================
+// acceso
+// ======================================================================
+let modoAcceso = 'entrar';
+function mostrarAcceso(configurada, pideCodigo) {
+  modoAcceso = configurada ? 'entrar' : 'crear';
+  $('#app').hidden = true; $('#acceso').hidden = false;
+  $('#aTitulo').textContent = configurada ? 'LaNotaMia · entrar' : 'LaNotaMia · primera vez';
+  $('#aTexto').textContent = configurada
+    ? 'Escribe tu contraseña. Este equipo la recordará ' + 180 + ' días.'
+    : 'Bienvenido. Crea la contraseña con la que entrarás desde todos tus equipos (mínimo 8 caracteres). Guárdala bien: si la olvidas, se restablece borrando clave.json en la carpeta de datos.';
+  $('#aClave').autocomplete = configurada ? 'current-password' : 'new-password';
+  $('#aClave2').hidden = configurada; $('#aClave2').required = !configurada;
+  $('#aCodigo').hidden = configurada || !pideCodigo; $('#aCodigo').required = !configurada && !!pideCodigo;
+  $('#aBoton').textContent = configurada ? 'entrar' : 'crear y entrar';
+  $('#aError').textContent = '';
+  setTimeout(() => ($('#aCodigo').hidden ? $('#aClave') : $('#aCodigo')).focus(), 50);
+}
+$('#fAcceso').onsubmit = async e => {
+  e.preventDefault();
+  const c1 = $('#aClave').value, c2 = $('#aClave2').value, err = $('#aError');
+  if (modoAcceso === 'crear' && c1 !== c2) { err.textContent = 'No coinciden.'; return; }
+  $('#aBoton').disabled = true;
+  try {
+    await api(modoAcceso, { clave: c1, codigo: $('#aCodigo').value });
+    $('#aClave').value = $('#aClave2').value = '';
+    entrar();
+  } catch (x) { err.textContent = x.message || 'Sin conexión con el servidor.'; }
+  $('#aBoton').disabled = false;
+};
+function sesionPerdida() {
+  sesion = false;
+  mostrarAcceso(true);
+  $('#aError').textContent = 'La sesión se cerró. Tus cambios sin subir se conservan en este equipo.';
+}
+function entrar() {
+  sesion = true;
+  $('#acceso').hidden = true; $('#app').hidden = false;
+  pintar(); refrescarEditor();
+  if (S.actual && S.notas[S.actual] && matchMedia('(min-width:720px)').matches) irA('editor'); else irA('lista');
+  sincronizar();
+}
+
+// ======================================================================
+// eventos
+// ======================================================================
+const ta = $('#texto');
+ta.addEventListener('blur', () => {
+  // al dejar de escribir, la nota vuelve a lectura y sus enlaces se pueden tocar
+  setTimeout(() => {
+    if (document.activeElement === ta || !document.hasFocus()) return;
+    const n = S.notas[S.actual];
+    if (n && n.texto.trim()) leer();
+  }, 120);
+});
+$('#lectura').addEventListener('click', e => {
+  const caja = e.target.closest('.caja');
+  if (caja) { e.preventDefault(); palomear(+caja.dataset.i); return; }
+  if (e.target.closest('a')) return;
+  const sel = getSelection();
+  if (sel && !sel.isCollapsed && $('#lectura').contains(sel.anchorNode)) return;   // estaba seleccionando para copiar
+  editar(posicionEn(e.clientX, e.clientY));
+});
+$('#lectura').addEventListener('keydown', e => {
+  const caja = e.target.closest && e.target.closest('.caja');
+  if (caja && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); palomear(+caja.dataset.i); }
+});
+// el botón de tareas no debe quitarle el foco a la nota mientras escribes
+ta.addEventListener('blur', () => { ultimaSel = { a: ta.selectionStart, b: ta.selectionEnd }; });
+$('#bTareas').addEventListener('mousedown', e => e.preventDefault());
+$('#bTareas').onclick = alternarTareas;
+$('#bListo').onclick = () => { ta.blur(); leer(); };
+$('#bNueva2').onclick = nueva;
+$('#bAdjuntar').onclick = () => $('#fArchivo').click();
+$('#fArchivo').onchange = e => { const fs = e.target.files; subirArchivos(fs, S.notas[S.actual]); e.target.value = ''; };
+$('#adjuntos').addEventListener('click', e => {
+  const b = e.target.closest('[data-borrar-f]'); if (b) { e.preventDefault(); borrarAdjunto(b.dataset.borrarF); return; }
+  const c = e.target.closest('[data-cancelar-s]');
+  if (c) { const x = subidas[c.dataset.cancelarS]; if (x) { if (x.error) delete subidas[c.dataset.cancelarS]; else x.cancelar = true; pintarAdjuntos(); } }
+});
+// soltar archivos sobre la nota (o sobre la lista para crear una nota nueva con ellos)
+['editor', 'notas'].forEach(zona => {
+  const el = $('#' + zona);
+  el.addEventListener('dragover', e => { if ([...(e.dataTransfer.types || [])].includes('Files')) { e.preventDefault(); el.classList.add('soltar'); } });
+  el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('soltar'); });
+  el.addEventListener('drop', e => {
+    if (!e.dataTransfer.files.length) return;
+    e.preventDefault(); el.classList.remove('soltar');
+    const n = zona === 'editor' ? S.notas[S.actual] : null;
+    subirArchivos(e.dataTransfer.files, n && !n.borrada ? n : null);
+  });
+});
+// pegar un archivo o captura (Ctrl/Cmd+V) también lo adjunta
+document.addEventListener('paste', e => {
+  const fs = e.clipboardData && e.clipboardData.files;
+  if (!sesion || !fs || !fs.length || !S.notas[S.actual]) return;
+  e.preventDefault(); subirArchivos(fs, S.notas[S.actual]);
+});
+ta.addEventListener('input', () => {
+  const n = S.notas[S.actual]; if (!n || n.borrada) return;
+  n.texto = ta.value;
+  marcar(n, true);
+  estado('trabajando');
+  pintar();
+});
+// Tab escribe una tabulación en lugar de saltar de campo
+ta.addEventListener('keydown', e => {
+  if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    e.preventDefault(); document.execCommand('insertText', false, '\t');
+  }
+  // Enter en una tarea (o viñeta) abre otra; Enter en una vacía termina la lista
+  if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && !e.isComposing && ta.selectionStart === ta.selectionEnd) {
+    const v = ta.value, c = ta.selectionStart, ini = v.lastIndexOf('\n', c - 1) + 1;
+    const m = /^([ \t]*)([☐☑]|[-•*])([ \t]?)(.*)$/.exec(v.slice(ini, c));
+    if (!m) return;
+    e.preventDefault();
+    if (!m[4].trim() && v.slice(c, (v.indexOf('\n', c) + 1 || v.length + 1) - 1).trim() === '') {
+      // (setRangeText: insertText con texto vacío deja el cursor una línea arriba en Chrome)
+      ta.setRangeText(m[1], ini, c, 'end'); ta.dispatchEvent(new Event('input'));
+    } else {
+      const marca = m[2] === '☑' ? '☐' : m[2];
+      document.execCommand('insertText', false, '\n' + m[1] + marca + ' ');
+    }
+  }
+});
+
+$('#lista').addEventListener('click', e => { const li = e.target.closest('li[data-id]'); if (li) abrir(li.dataset.id); });
+$('#lista-carpetas').addEventListener('click', e => {
+  const b = e.target.closest('[data-vista]'); if (!b) return;
+  S.vista = b.dataset.vista; S.q = ''; $('#buscar').value = '';
+  document.body.classList.remove('cajon'); irA('lista'); pintar(); guardarLocal();
+});
+// mantener pulsada (o clic derecho) una carpeta propia para renombrarla o borrarla
+let tPulsar = 0;
+$('#lista-carpetas').addEventListener('contextmenu', e => {
+  const b = e.target.closest('[data-vista]'); const v = b && b.dataset.vista;
+  if (!b || ['*', '', 'papelera', 'archivos'].includes(v)) return;
+  e.preventDefault(); menuCarpeta(v);
+});
+$('#lista-carpetas').addEventListener('touchstart', e => {
+  const b = e.target.closest('[data-vista]'); const v = b && b.dataset.vista;
+  if (!b || ['*', '', 'papelera', 'archivos'].includes(v)) return;
+  tPulsar = setTimeout(() => menuCarpeta(v), 550);
+}, { passive: true });
+['touchend', 'touchmove', 'touchcancel'].forEach(t => $('#lista-carpetas').addEventListener(t, () => clearTimeout(tPulsar), { passive: true }));
+
+$('#buscar').addEventListener('input', e => { S.q = e.target.value; pintar(); });
+$('#bNueva').onclick = nueva;
+$('#bAtras').onclick = () => { if (S.actual) descartarSiVacia(S.actual); ta.blur(); irA('lista'); pintar(); };
+$('#bCajon').onclick = () => document.body.classList.toggle('cajon');
+$$('[data-cerrar-cajon]').forEach(b => b.onclick = () => document.body.classList.remove('cajon'));
+$('#bAjustes').onclick = abrirAjustes;
+$('#bNuevaCarpeta').onclick = async () => {
+  const c = await pedir('carpeta nueva', '', 'crear');
+  if (!c) return;
+  if (!S.carpetas.includes(c)) { S.carpetas.push(c); S.carpetasPend = true; }
+  S.vista = c; pintar(); guardarLocal(); programarSync(100);
+};
+document.addEventListener('click', e => { if (e.target.closest('[data-acerca]')) acerca(); });
+
+async function accion(a) {
+  const n = S.notas[S.actual]; if (!n) return;
+  switch (a) {
+    case 'copiar': copiar(n.texto); break;
+    case 'fijar': n.fijada = !n.fijada; marcar(n, false); pintar(); break;
+    case 'mover': elegirCarpeta(n); break;
+    case 'descargar': {
+      const nombre = titulo(n).replace(/[\\/:*?"<>|]+/g, '').slice(0, 60) || 'nota';
+      const url = URL.createObjectURL(new Blob([n.texto], { type: 'text/plain;charset=utf-8' }));
+      const l = document.createElement('a'); l.href = url; l.download = nombre + '.txt'; l.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000); break;
+    }
+    case 'compartir':
+      try { await navigator.share({ title: titulo(n), text: n.texto }); } catch (e) {} break;
+    case 'borrar': {
+      if (!n.texto.trim() && !archivosDe(n.id).length) { descartarSiVacia(n.id); S.actual = null; refrescarEditor(); irA('lista'); break; }
+      n.borrada = true; marcar(n, false);
+      const id = n.id; S.actual = null; refrescarEditor(); irA('lista');
+      brindis('Nota en la papelera', 'deshacer', () => { const m = S.notas[id]; if (m) { m.borrada = false; marcar(m, false); abrir(id); } });
+      break;
+    }
+    case 'restaurar': n.borrada = false; marcar(n, false); refrescarEditor(); brindis('Restaurada en ' + (n.carpeta || 'Notas')); break;
+    case 'purgar':
+      if (!(await confirmar('Se borrará de todos tus equipos y no se puede deshacer.', 'borrar para siempre'))) return;
+      delete S.notas[n.id]; delete S.pend[n.id]; if (n.srv) S.purgarPend.push(n.id);
+      archivosDe(n.id).forEach(a => delete S.archivos[a.id]);
+      S.actual = null; refrescarEditor(); irA('lista'); guardarLocal(); programarSync(50); break;
+    case 'resuelta': n.conflicto = false; marcar(n, false); refrescarEditor(); break;
+    case 'mas':
+      dialogo(titulo(n), `<div class="opciones">
+        ${navigator.share ? '<button data-a="compartir">compartir…</button>' : ''}
+        <button data-a="fijar">${n.fijada ? 'desfijar' : 'fijar arriba'}</button>
+        <button data-a="mover">mover a carpeta…</button>
+        <button data-a="descargar">descargar .txt</button>
+        <button data-a="borrar">mandar a la papelera</button></div>`,
+        (capa, cerrar) => capa.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { cerrar(); accion(b.dataset.a); }));
+      break;
+  }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-acc]'); if (b && !b.closest('#capa .opciones')) accion(b.dataset.acc); });
+
+// atajos
+document.addEventListener('keydown', e => {
+  if (!sesion || !$('#capa').hidden) { if (e.key === 'Escape' && !$('#capa').hidden) { $('#capa').hidden = true; $('#capa').innerHTML = ''; } return; }
+  const mod = e.metaKey || e.ctrlKey;
+  if (e.altKey && (e.code === 'KeyN')) { e.preventDefault(); nueva(); }
+  else if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); irA('lista'); $('#buscar').focus(); $('#buscar').select(); }
+  else if (mod && e.shiftKey && e.key.toLowerCase() === 'c' && S.actual) { e.preventDefault(); accion('copiar'); }
+  else if (mod && e.shiftKey && e.key.toLowerCase() === 'l' && S.actual) { e.preventDefault(); alternarTareas(); }
+  else if (e.key === 'Escape') {
+    if (document.activeElement === $('#buscar') && S.q) { S.q = ''; $('#buscar').value = ''; pintar(); }
+    else if (document.activeElement === ta && matchMedia('(min-width:720px)').matches) { ta.blur(); leer(); }
+    else if (document.body.classList.contains('v-editor')) { $('#bAtras').click(); }
+    else $('#buscar').blur();
+  }
+  else if (e.key === 'Enter' && document.activeElement === $('#buscar')) {
+    const primera = visibles()[0]; if (primera) { abrir(primera.id); editar(); }
+  }
+});
+
+// mantenerse al día: al volver a la pestaña, al recuperar red y cada 15 s
+setInterval(() => { if (document.visibilityState === 'visible' && navigator.onLine) sincronizar(); }, 15000);
+window.addEventListener('focus', () => sincronizar());
+window.addEventListener('online', () => sincronizar());
+window.addEventListener('offline', () => estado('fuera'));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') sincronizar();
+  else {
+    guardarLocal(true);
+    // al cerrar o cambiar de app, sube lo pendiente aunque la página se congele
+    if (sesion && (Object.keys(S.pend).length || S.purgarPend.length || S.carpetasPend)) {
+      const peso = JSON.stringify(S.pend).length + Object.keys(S.pend).reduce((t, id) => t + ((S.notas[id] || {}).texto || '').length, 0);
+      if (!ocupado) empujar(peso < 60000).then(() => guardarLocal(true)).catch(() => {});
+    }
+  }
+});
+window.addEventListener('pagehide', () => guardarLocal(true));
+
+// ======================================================================
+// inicio
+// ======================================================================
+async function iniciar() {
+  const habia = cargarLocal();
+  aplicarAjustes();
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  // Si este equipo ya tiene sus notas, se muestran al instante y se ponen al día por detrás.
+  // Si la sesión venció, la primera sincronización lo detecta y pide la contraseña.
+  if (habia) { entrar(); return; }
+  try {
+    const e = await api('estado');
+    if (e.sesion) entrar();
+    else mostrarAcceso(e.configurada, e.pideCodigo);
+  } catch (x) {
+    // sin conexión: si este equipo ya tenía notas, se abren igual
+    if (habia) { sesion = true; $('#acceso').hidden = true; $('#app').hidden = false; pintar(); refrescarEditor(); irA('lista'); estado('fuera'); }
+    else { mostrarAcceso(true); $('#aError').textContent = 'No hay conexión con el servidor.'; }
+  }
+}
+iniciar();
+})();
+</script>
+</body>
+</html>

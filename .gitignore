@@ -1,0 +1,7 @@
+# Configuración real (lleva el código de instalación) y datos de las notas
+config.php
+data/
+# Archivos de trabajo
+*.zip
+.DS_Store
+node_modules/
