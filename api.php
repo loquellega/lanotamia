@@ -1,6 +1,6 @@
 <?php
 /*
- * LaNotaMia 0.5 · servidor de notas
+ * LaNotaMia 0.5.1 · servidor de notas
  * Parte de la colección Alchemy of Meaning (Alquimia del Significado).
  * © 2026 Héctor Cruz Juárez · https://hectorcruz.com.mx
  * Software libre bajo licencia GPL-3.0-or-later.
@@ -231,7 +231,7 @@ $hash = leer($D . '/clave.json', [])['hash'] ?? '';
 if ($accion === 'estado') {
     $codigo = defined('LNM_CODIGO_INSTALACION') ? (string) LNM_CODIGO_INSTALACION : '';
     fin(200, ['configurada' => $hash !== '', 'sesion' => $hash !== '' && sesionValida(),
-              'pideCodigo' => $hash === '' && $codigo !== '', 'version' => '0.5']);
+              'pideCodigo' => $hash === '' && $codigo !== '', 'version' => '0.5.1']);
 }
 
 if ($accion === 'crear' && $metodo === 'POST') {
@@ -455,7 +455,7 @@ case 'subir-inicio':
     if ($tam < 0) fin(400, ['error' => 'Tamaño no válido.']);
     $ref = !empty($cuerpo['ref']);     // imagen de referencia: pequeña y sin fecha de caducidad
     $tipoRef = (string) ($cuerpo['tipo'] ?? '');
-    if ($ref && $tam > 600 * 1024) fin(413, ['error' => 'La imagen de referencia pasa de 600 KB.']);
+    if ($ref && $tam > 1536 * 1024) fin(413, ['error' => 'La imagen de referencia pasa de 1.5 MB.']);
     if ($ref && !preg_match('#^image/(jpeg|webp|png)$#', $tipoRef)) fin(400, ['error' => 'Formato de imagen no válido.']);
     if ($tam > maxArchivo()) fin(413, ['error' => 'El archivo pasa de ' . (maxArchivo() / 1048576) . ' MB.']);
     $total = (defined('LNM_MB_TOTAL') ? LNM_MB_TOTAL : 1000) * 1048576;
@@ -554,7 +554,7 @@ case 'exportar':
         if ($x && !empty($x['completo']) && empty($x['borrado'])) $fichas[] = fichaPublica($x);
     }
     // los archivos en sí no van en el .json: se bajan uno por uno desde su nota
-    fin(200, ['app' => 'LaNotaMia', 'version' => '0.5', 'fecha' => date('c'),
+    fin(200, ['app' => 'LaNotaMia', 'version' => '0.5.1', 'fecha' => date('c'),
               'carpetas' => leer($D . '/carpetas.json', ['lista' => []])['lista'] ?? [], 'notas' => $todo, 'archivos' => $fichas]);
 }
 

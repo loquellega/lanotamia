@@ -915,9 +915,9 @@ function pintarImagenes() {
       ? `<div class="mini subiendo error" data-cancelar-s="${k}" title="Toca para quitar">${esc(x.error)}</div>`
       : `<div class="mini subiendo">${Math.floor(100 * x.hecho / Math.max(1, x.tam))} %<span class="barraProg" style="width:${100 * x.hecho / Math.max(1, x.tam)}%"></span></div>`).join('');
 }
-// Reduce la imagen en el equipo antes de subirla: 800 px por lado, WebP (o JPEG) al 72 %.
-// Una foto de 4 MB queda en unos 40–90 KB.
-const LADO_IMG = 800;
+// Reduce la imagen en el equipo antes de subirla: máximo 1920 px por el lado largo, WebP (o JPEG) al 72 %.
+// Una foto de iPhone de 4–6 MB queda en unos 150–500 KB. Si aún pasa de 1.2 MB, se baja la calidad.
+const LADO_IMG = 1920, MAX_IMG = 1.2 * MB;
 async function reducirImagen(f) {
   let fuente, url;
   try { fuente = await createImageBitmap(f, { imageOrientation: 'from-image' }); }
@@ -934,9 +934,15 @@ async function reducirImagen(f) {
   g.drawImage(fuente, 0, 0, c.width, c.height);
   if (url) URL.revokeObjectURL(url);
   if (fuente.close) fuente.close();
-  let b = await new Promise(r => c.toBlob(r, 'image/webp', 0.72));
-  if (!b || b.type !== 'image/webp') b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.72));
+  const codificar = async q => {
+    let x = await new Promise(r => c.toBlob(r, 'image/webp', q));
+    if (!x || x.type !== 'image/webp') x = await new Promise(r => c.toBlob(r, 'image/jpeg', q));
+    return x;
+  };
+  let b = await codificar(0.72);
+  for (const q of [0.6, 0.5, 0.4]) { if (!b || b.size <= MAX_IMG) break; b = await codificar(q); }
   if (!b) throw new Error('no se pudo reducir');
+  if (b.size > MAX_IMG) throw new Error('la imagen sigue pesando demasiado');
   const base = (f.name || 'imagen').replace(/\.[a-z0-9]{1,5}$/i, '') || 'imagen';
   return new File([b], base + (b.type === 'image/webp' ? '.webp' : '.jpg'), { type: b.type });
 }
@@ -1234,7 +1240,7 @@ function cambiarClave() {
 
 function acerca() {
   dialogo('i · LaNotaMia', `<div class="acerca">
-    <p><b>LaNotaMia</b> 0.5 · notas de texto en tu propio servidor, iguales en el teléfono, la tableta y cualquier computadora. Imágenes de referencia en baja resolución y archivos de hasta 20 MB para pasarlos entre equipos (estos se borran solos al mes).</p>
+    <p><b>LaNotaMia</b> 0.5.1 · notas de texto en tu propio servidor, iguales en el teléfono, la tableta y cualquier computadora. Imágenes de referencia en baja resolución y archivos de hasta 20 MB para pasarlos entre equipos (estos se borran solos al mes).</p>
     <p>Diseño, investigación y desarrollo: <b>Héctor Cruz Juárez</b> — <a href="https://hectorcruz.com.mx" target="_blank" rel="noopener">https://hectorcruz.com.mx</a><br><span class="g">Colección Alchemy of Meaning.</span></p>
     <p><b>Héctor Cruz Juárez</b> es diseñador multimedia y de proyección para artes escénicas, con más de 26 años de trayectoria y más de 110 producciones en distintos países. Director de arte multimedia de Landscape Artes Escénicas, cofundador de Meridiano Studio y de la comunidad Resonancias, Embajador de Isadora para América Latina y creador de la metodología TCRV (World Summit Award, WSA, 2020). Miembro del Sistema Nacional de Creadores de Arte.</p>
     <p class="g">© 2026 Héctor Cruz Juárez. Software libre: puedes usarlo, estudiarlo, modificarlo y compartirlo bajo los términos de la licencia GNU GPL versión 3 o posterior (GPL-3.0-or-later). Se ofrece sin ninguna garantía.</p>

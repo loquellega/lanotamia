@@ -5,7 +5,7 @@
    vuelven a pedir al servidor (no cambian nunca: cada una tiene su propio id).
    Las notas (api.php) nunca se guardan aquí: viven en el servidor y en el equipo.
    © 2026 Héctor Cruz Juárez · GPL-3.0-or-later */
-const CACHE = 'lanotamia-0.5';
+const CACHE = 'lanotamia-0.5.1';
 const IMAGENES = 'lanotamia-imagenes';
 const BASE = ['./', 'index.html', 'manifest.webmanifest', 'icono-192.png', 'icono-512.png', 'icono-180.png', 'favicon-32.png', 'favicon-64.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting())); });

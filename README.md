@@ -2,7 +2,7 @@
 
 # LaNotaMia
 
-**Versión 0.5** · [Español](#español) · [English](#english)
+**Versión 0.5.1** · [Español](#español) · [English](#english)
 
 ![LaNotaMia en el escritorio](docs/capturas/01-escritorio.png)
 
@@ -20,7 +20,7 @@ No usa base de datos ni servicios externos: cada nota es un archivo `.json` en t
 - **Título automático** a partir de las primeras palabras.
 - **Modo lectura**: cuando no estás escribiendo, los enlaces, correos y teléfonos se pueden tocar.
 - **Listas de tareas** que se palomean con un toque. Selecciona varias líneas y aparece «convertir en tareas». Se guardan como ☐ / ☑, así que se copian y pegan bien en cualquier lado.
-- **Imágenes de referencia** en baja resolución: se reducen en el propio equipo a 800 px y unos 30–90 KB antes de subirse, no caducan y cada equipo las descarga una sola vez.
+- **Imágenes de referencia** en baja resolución: se reducen en el propio equipo a máximo 1920 px por el lado largo antes de subirse (una foto de iPhone queda en unos 150–500 KB), no caducan y cada equipo las descarga una sola vez.
 - **Archivos adjuntos** de hasta 20 MB para pasarlos entre equipos. Se borran solos a los 30 días; la nota se queda.
 - **Carpetas, búsqueda, notas fijadas y papelera** (30 días).
 - **Funciona sin conexión**: lo que escribes se sube al volver la red. Si editas la misma nota en dos equipos a la vez, nada se pierde: tu versión queda como copia marcada «conflicto».
@@ -82,7 +82,7 @@ No database and no third-party services: each note is a `.json` file on your hos
 - **Automatic title** from the first words.
 - **Reading mode**: when you are not typing, links, email addresses and phone numbers are tappable.
 - **Checklists** you tick with one tap. Select several lines and a "convertir en tareas" button appears. Stored as ☐ / ☑, so they copy and paste cleanly anywhere.
-- **Low-resolution reference images**: resized on the device to 800 px and about 30–90 KB before upload, they never expire and each device downloads them only once.
+- **Low-resolution reference images**: resized on the device to at most 1920 px on the long side before upload (an iPhone photo ends up around 150–500 KB), they never expire and each device downloads them only once.
 - **Attachments** up to 20 MB to move files between devices. They delete themselves after 30 days; the note stays.
 - **Folders, search, pinned notes and trash** (30 days).
 - **Works offline**: changes upload when the connection returns. If the same note is edited on two devices at once, nothing is lost: your version is kept as a copy marked "conflicto".
