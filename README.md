@@ -2,7 +2,7 @@
 
 # LaNotaMia
 
-**Versión 0.4** · [Español](#español) · [English](#english)
+**Versión 0.5** · [Español](#español) · [English](#english)
 
 ![LaNotaMia en el escritorio](docs/capturas/01-escritorio.png)
 
@@ -19,16 +19,17 @@ No usa base de datos ni servicios externos: cada nota es un archivo `.json` en t
 - **Notas de texto** que se guardan solas mientras escribes y se sincronizan entre equipos.
 - **Título automático** a partir de las primeras palabras.
 - **Modo lectura**: cuando no estás escribiendo, los enlaces, correos y teléfonos se pueden tocar.
-- **Listas de tareas** que se palomean con un toque (se guardan como ☐ / ☑, así que se copian y pegan bien en cualquier lado).
+- **Listas de tareas** que se palomean con un toque. Selecciona varias líneas y aparece «convertir en tareas». Se guardan como ☐ / ☑, así que se copian y pegan bien en cualquier lado.
+- **Imágenes de referencia** en baja resolución: se reducen en el propio equipo a 800 px y unos 30–90 KB antes de subirse, no caducan y cada equipo las descarga una sola vez.
 - **Archivos adjuntos** de hasta 20 MB para pasarlos entre equipos. Se borran solos a los 30 días; la nota se queda.
 - **Carpetas, búsqueda, notas fijadas y papelera** (30 días).
 - **Funciona sin conexión**: lo que escribes se sube al volver la red. Si editas la misma nota en dos equipos a la vez, nada se pierde: tu versión queda como copia marcada «conflicto».
 - **Sesiones abiertas**: en Ajustes ves cada equipo con la sesión abierta y puedes cerrarla en uno o en todos los demás.
 - **Se instala como app** en el iPhone, Android, Windows o Mac, y abre al instante.
 
-| Lista de tareas en el iPhone | Sesiones abiertas |
-|---|---|
-| <img src="docs/capturas/03-iphone-tareas.png" width="300" alt="Nota con tareas en el iPhone"> | <img src="docs/capturas/07-iphone-sesiones.png" width="300" alt="Sesiones abiertas en el iPhone"> |
+| Lista de tareas en el iPhone | Seleccionar y convertir en tareas | Sesiones abiertas |
+|---|---|---|
+| <img src="docs/capturas/03-iphone-tareas.png" width="260" alt="Nota con tareas en el iPhone"> | <img src="docs/capturas/08-iphone-seleccion-tareas.png" width="260" alt="Botón convertir en tareas e imágenes de referencia"> | <img src="docs/capturas/07-iphone-sesiones.png" width="260" alt="Sesiones abiertas en el iPhone"> |
 
 ![Sesiones abiertas en el escritorio](docs/capturas/05-sesiones.png)
 
@@ -80,7 +81,8 @@ No database and no third-party services: each note is a `.json` file on your hos
 - **Text notes** that save as you type and sync across devices.
 - **Automatic title** from the first words.
 - **Reading mode**: when you are not typing, links, email addresses and phone numbers are tappable.
-- **Checklists** you tick with one tap (stored as ☐ / ☑, so they copy and paste cleanly anywhere).
+- **Checklists** you tick with one tap. Select several lines and a "convertir en tareas" button appears. Stored as ☐ / ☑, so they copy and paste cleanly anywhere.
+- **Low-resolution reference images**: resized on the device to 800 px and about 30–90 KB before upload, they never expire and each device downloads them only once.
 - **Attachments** up to 20 MB to move files between devices. They delete themselves after 30 days; the note stays.
 - **Folders, search, pinned notes and trash** (30 days).
 - **Works offline**: changes upload when the connection returns. If the same note is edited on two devices at once, nothing is lost: your version is kept as a copy marked "conflicto".

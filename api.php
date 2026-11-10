@@ -1,6 +1,6 @@
 <?php
 /*
- * LaNotaMia 0.4 · servidor de notas
+ * LaNotaMia 0.5 · servidor de notas
  * Parte de la colección Alchemy of Meaning (Alquimia del Significado).
  * © 2026 Héctor Cruz Juárez · https://hectorcruz.com.mx
  * Software libre bajo licencia GPL-3.0-or-later.
@@ -169,7 +169,7 @@ function limpiarNombre($n): string {
     return $n === '' ? 'archivo' : mb_substr($n, 0, 160);
 }
 function fichaPublica(array $f): array {
-    return array_intersect_key($f, array_flip(['id', 'nota', 'nombre', 'tam', 'tipo', 'subido', 'expira', 'srv', 'borrado']));
+    return array_intersect_key($f, array_flip(['id', 'nota', 'nombre', 'tam', 'tipo', 'subido', 'expira', 'srv', 'borrado', 'ref']));
 }
 function espacioUsado(): int {
     $t = 0;
@@ -231,7 +231,7 @@ $hash = leer($D . '/clave.json', [])['hash'] ?? '';
 if ($accion === 'estado') {
     $codigo = defined('LNM_CODIGO_INSTALACION') ? (string) LNM_CODIGO_INSTALACION : '';
     fin(200, ['configurada' => $hash !== '', 'sesion' => $hash !== '' && sesionValida(),
-              'pideCodigo' => $hash === '' && $codigo !== '', 'version' => '0.4']);
+              'pideCodigo' => $hash === '' && $codigo !== '', 'version' => '0.5']);
 }
 
 if ($accion === 'crear' && $metodo === 'POST') {
@@ -453,6 +453,10 @@ case 'subir-inicio':
     $tam = (int) ($cuerpo['tam'] ?? -1);
     if (!idValido($nota)) fin(400, ['error' => 'Nota no válida.']);
     if ($tam < 0) fin(400, ['error' => 'Tamaño no válido.']);
+    $ref = !empty($cuerpo['ref']);     // imagen de referencia: pequeña y sin fecha de caducidad
+    $tipoRef = (string) ($cuerpo['tipo'] ?? '');
+    if ($ref && $tam > 600 * 1024) fin(413, ['error' => 'La imagen de referencia pasa de 600 KB.']);
+    if ($ref && !preg_match('#^image/(jpeg|webp|png)$#', $tipoRef)) fin(400, ['error' => 'Formato de imagen no válido.']);
     if ($tam > maxArchivo()) fin(413, ['error' => 'El archivo pasa de ' . (maxArchivo() / 1048576) . ' MB.']);
     $total = (defined('LNM_MB_TOTAL') ? LNM_MB_TOTAL : 1000) * 1048576;
     if (espacioUsado() + $tam > $total) fin(507, ['error' => 'Ya no hay espacio para archivos. Borra alguno o espera a que venzan.']);
@@ -460,7 +464,7 @@ case 'subir-inicio':
     escribir(rutaArchivo($id), [
         'id' => $id, 'nota' => $nota, 'nombre' => limpiarNombre($cuerpo['nombre'] ?? ''),
         'tam' => $tam, 'tipo' => mb_substr((string) ($cuerpo['tipo'] ?? ''), 0, 100),
-        'recibido' => 0, 'completo' => false, 'inicio' => ahora(),
+        'recibido' => 0, 'completo' => false, 'inicio' => ahora(), 'ref' => $ref,
     ]);
     @file_put_contents(rutaArchivo($id, 'bin'), '');
     @chmod(rutaArchivo($id, 'bin'), 0600);
@@ -496,7 +500,7 @@ case 'subir-fin':
     }
     $a['completo'] = true;
     $a['subido'] = ahora();
-    $a['expira'] = ahora() + diasArchivos() * 86400000;
+    $a['expira'] = !empty($a['ref']) ? null : ahora() + diasArchivos() * 86400000;
     $a['srv'] = revSiguiente();
     escribir(rutaArchivo($id), $a);
     soltar();
@@ -532,7 +536,7 @@ case 'archivo':
     header('Content-Length: ' . filesize(rutaArchivo($id, 'bin')));
     header('Content-Disposition: ' . ($enLinea ? 'inline' : 'attachment') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($nombre));
     header("Content-Security-Policy: default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox");
-    header('Cache-Control: private, max-age=86400');
+    header('Cache-Control: private, max-age=' . (!empty($a['ref']) ? '31536000, immutable' : '86400'));
     while (ob_get_level()) ob_end_clean();
     readfile(rutaArchivo($id, 'bin'));
     exit;
@@ -550,7 +554,7 @@ case 'exportar':
         if ($x && !empty($x['completo']) && empty($x['borrado'])) $fichas[] = fichaPublica($x);
     }
     // los archivos en sí no van en el .json: se bajan uno por uno desde su nota
-    fin(200, ['app' => 'LaNotaMia', 'version' => '0.4', 'fecha' => date('c'),
+    fin(200, ['app' => 'LaNotaMia', 'version' => '0.5', 'fecha' => date('c'),
               'carpetas' => leer($D . '/carpetas.json', ['lista' => []])['lista'] ?? [], 'notas' => $todo, 'archivos' => $fichas]);
 }
 

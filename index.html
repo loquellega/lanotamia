@@ -128,7 +128,26 @@ input.campo:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-f
 #editor .barra .acc{display:flex;gap:2px}
 #aviso{margin:0 16px;border-radius:10px;background:var(--acento-fondo);color:var(--acento-tinta);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between}
 #aviso .bt{border-color:rgba(201,138,18,.4)}
-#hoja{flex:1;display:flex;min-height:0;overflow:hidden}
+#hoja{flex:1;display:flex;min-height:0;overflow:hidden;position:relative}
+/* botón flotante al seleccionar texto */
+#selTareas{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:5;display:inline-flex;align-items:center;gap:8px;background:var(--tinta);color:#fff;border:0;border-radius:22px;padding:9px 16px;font-weight:600;box-shadow:var(--sombra);white-space:nowrap}
+#selTareas svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#selTareas:hover{background:#3a362f}
+@media (pointer:coarse){#selTareas{padding:12px 18px;bottom:18px}}
+/* imágenes de referencia */
+#imagenes{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;border-top:1px solid var(--linea);scrollbar-width:thin}
+.mini{flex:none;position:relative;width:92px;height:92px;border-radius:10px;overflow:hidden;background:var(--fichero);border:1px solid var(--linea);padding:0;cursor:zoom-in}
+.mini img{width:100%;height:100%;object-fit:cover;display:block}
+.mini.subiendo{display:grid;place-items:center;color:var(--suave);font-size:.85em;cursor:default}
+.mini.subiendo .barraProg{position:absolute;left:0;bottom:0;height:3px;background:var(--acento)}
+.mini.error{color:#A4371F;padding:6px;text-align:center;line-height:1.25}
+@media (pointer:coarse){.mini{width:84px;height:84px}}
+.ventana.ancha{width:min(920px,100%)!important}
+.visor{display:grid;gap:12px}
+.visor img{max-width:100%;max-height:68dvh;margin:0 auto;display:block;border-radius:8px;background:var(--fichero)}
+.visor .fila{justify-content:space-between;align-items:center}
+.visor small{color:var(--suave);font-variant-numeric:tabular-nums}
+.visor a.bt{text-decoration:none}
 #texto,#lectura{flex:1;width:100%;max-width:var(--ancho,100%);margin:0 auto;display:block;background:var(--hoja);border:0;outline:none;resize:none;
   padding:18px 32px calc(28px + var(--sb));font-family:var(--fuente);font-size:var(--tam);line-height:1.6;color:var(--tinta);
   caret-color:var(--acento);white-space:pre-wrap;overflow-wrap:break-word;tab-size:4}
@@ -154,6 +173,9 @@ input.campo:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-f
 .abajo .der{display:flex;justify-content:flex-end;grid-column:3}
 .abajo .centro{min-width:0}
 #pie-editor .izq{overflow:visible}
+#pie-editor{grid-template-columns:auto minmax(0,1fr) auto}
+@media (max-width:1250px) and (min-width:720px){#pie-editor #palabras{display:none}}
+@media (max-width:980px) and (min-width:720px){#pie-editor .rot{display:none}}
 .icono{background:none;border:0;color:var(--acento-tinta);width:38px;height:38px;border-radius:10px;display:inline-grid;place-items:center;padding:0;grid-auto-flow:column;gap:6px}
 .icono:hover{background:rgba(201,138,18,.10)}
 .icono:active{background:var(--acento-fondo)}
@@ -310,15 +332,18 @@ input.campo:focus{border-color:var(--acento);box-shadow:0 0 0 3px var(--acento-f
     <div id="hoja">
       <div id="lectura" hidden data-vacio="Toca para escribir."></div>
       <textarea id="texto" spellcheck="true" autocapitalize="sentences" autocomplete="off" hidden placeholder="Escribe. El título se toma solo de las primeras palabras."></textarea>
+      <button id="selTareas" type="button" hidden></button>
       <div id="sinNota">Elige una nota o crea una nueva.</div>
     </div>
+    <div id="imagenes" hidden></div>
     <div id="adjuntos" hidden></div>
     <div id="pie-editor" class="abajo">
-      <span class="izq"><button class="icono rotulo" id="bAdjuntar" title="Adjuntar archivos (hasta 20 MB, se borran al mes)" aria-label="Adjuntar archivo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.6l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4a3.4 3.4 0 0 1 4.8 4.8l-8.3 8.3a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/></svg><span class="rot">adjuntar</span></button><button class="icono rotulo" id="bTareas" title="Lista de tareas (Ctrl/Cmd+Shift+L)" aria-label="Lista de tareas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><path d="M4.9 16.9l1 1 2.1-2.3"/><circle cx="6.4" cy="17" r="2.4"/><path d="M11.5 7h8.5M11.5 17h8.5"/></svg><span class="rot">tareas</span></button></span>
+      <span class="izq"><button class="icono rotulo" id="bAdjuntar" title="Adjuntar archivos (hasta 20 MB, se borran al mes)" aria-label="Adjuntar archivo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.6l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4a3.4 3.4 0 0 1 4.8 4.8l-8.3 8.3a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/></svg><span class="rot">adjuntar</span></button><button class="icono rotulo" id="bTareas" title="Lista de tareas (Ctrl/Cmd+Shift+L)" aria-label="Lista de tareas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><path d="M4.9 16.9l1 1 2.1-2.3"/><circle cx="6.4" cy="17" r="2.4"/><path d="M11.5 7h8.5M11.5 17h8.5"/></svg><span class="rot">tareas</span></button><button class="icono rotulo" id="bImagen" title="Agregar imagen de referencia (se guarda en baja resolución)" aria-label="Agregar imagen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l4.8-4.6 3.4 3.2 2.6-2.4L20 18"/></svg><span class="rot">imagen</span></button></span>
       <span class="centro"><span id="fechaNota"></span><span id="palabras"></span></span>
       <span class="der"><button class="icono" id="bNueva2" title="Nota nueva (Alt+N)" aria-label="Nota nueva"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 4.5H6.8A2.3 2.3 0 0 0 4.5 6.8v10.4a2.3 2.3 0 0 0 2.3 2.3h10.4a2.3 2.3 0 0 0 2.3-2.3v-5.7"/><path d="M17.6 3.6a1.9 1.9 0 0 1 2.8 2.8l-7.6 7.6-3.6.8.8-3.6z"/></svg></button></span>
     </div>
     <input type="file" id="fArchivo" multiple hidden>
+    <input type="file" id="fImagen" accept="image/*" multiple hidden>
   </main>
 </div>
 <div id="velo" data-cerrar-cajon></div>
@@ -525,15 +550,23 @@ function partirTitulo(texto) {
   return { tit: cortado ? tit + '…' : tit, resto, cortado };
 }
 function archivosDe(id) { return Object.values(S.archivos).filter(a => a.nota === id); }
+function adjuntosDe(id) { return archivosDe(id).filter(a => !a.ref); }
+function imagenesDe(id) { return archivosDe(id).filter(a => a.ref); }
+// dirección de un archivo (la vista previa la reemplaza con LNM_SRC)
+function srcArchivo(id, ver) { return (window.LNM_SRC && window.LNM_SRC(id)) || ('api.php?a=archivo' + (ver ? '&ver=1' : '') + '&id=' + id); }
 function titulo(n) {
   const t = partirTitulo(n.texto).tit;
   if (t) return t;
   const a = archivosDe(n.id)[0];
-  return a ? a.nombre : 'Nota nueva';
+  return a ? (a.ref ? 'Imagen' : a.nombre) : 'Nota nueva';
 }
 function resumen(n) {
   const { tit, resto, cortado } = partirTitulo(n.texto);
-  if (!tit) { const k = archivosDe(n.id).length; return k ? (k === 1 ? '1 archivo adjunto' : k + ' archivos adjuntos') : 'sin texto'; }
+  if (!tit) {
+    const k = adjuntosDe(n.id).length, im = imagenesDe(n.id).length;
+    const p = [im ? (im === 1 ? '1 imagen' : im + ' imágenes') : '', k ? (k === 1 ? '1 archivo adjunto' : k + ' archivos adjuntos') : ''].filter(Boolean);
+    return p.length ? p.join(' · ') : 'sin texto';
+  }
   const hechas = (n.texto.match(/(^|\n)[ \t]*☑/g) || []).length, total = hechas + (n.texto.match(/(^|\n)[ \t]*☐/g) || []).length;
   const tareas = total ? hechas + ' de ' + total + ' hechas · ' : '';
   return tareas + (cortado ? '…' : '') + (resto.slice(0, 160) || 'sin más texto');
@@ -587,7 +620,7 @@ function visibles() {
     const q = norm(S.q.trim());
     a = a.filter(n => !n.borrada && (norm(n.texto).includes(q) || archivosDe(n.id).some(x => norm(x.nombre).includes(q))));
   } else if (S.vista === 'papelera') a = a.filter(n => n.borrada);
-  else if (S.vista === 'archivos') { const con = new Set(Object.values(S.archivos).map(x => x.nota)); a = a.filter(n => !n.borrada && con.has(n.id)); }
+  else if (S.vista === 'archivos') { const con = new Set(Object.values(S.archivos).filter(x => !x.ref).map(x => x.nota)); a = a.filter(n => !n.borrada && con.has(n.id)); }
   else {
     a = a.filter(n => !n.borrada);
     if (S.vista !== '*') a = a.filter(n => (n.carpeta || '') === S.vista);
@@ -610,7 +643,7 @@ function pintarYa() {
   const usadas = [...new Set([...S.carpetas, ...vivas.map(n => n.carpeta || '').filter(Boolean)])];
   $('#lista-carpetas').innerHTML =
     carp('*', 'Todas', vivas.length) + carp('', 'Notas', cuenta('')) +
-    (Object.keys(S.archivos).length ? carp('archivos', 'Con archivos', vivas.filter(n => archivosDe(n.id).length).length) : '') +
+    (Object.values(S.archivos).some(x => !x.ref) ? carp('archivos', 'Con archivos', vivas.filter(n => adjuntosDe(n.id).length).length) : '') +
     (usadas.length ? '<div class="carp titulo">mis carpetas</div>' : '') +
     usadas.map(c => carp(c, c, cuenta(c))).join('') +
     '<div class="carp titulo"> </div>' +
@@ -621,8 +654,10 @@ function pintarYa() {
   $('#tituloCarpeta').textContent = nombreVista;
   const lista = visibles();
   const porNota = {};
-  Object.values(S.archivos).forEach(a => porNota[a.nota] = (porNota[a.nota] || 0) + 1);
-  const clips = id => porNota[id] ? `<span class="clip" title="archivos adjuntos">${CLIP_MINI}${porNota[id] > 1 ? porNota[id] : ''}</span>` : '';
+  const imgNota = {};
+  Object.values(S.archivos).forEach(a => { const m = a.ref ? imgNota : porNota; m[a.nota] = (m[a.nota] || 0) + 1; });
+  const clips = id => (imgNota[id] ? `<span class="clip" title="imágenes">${IMG_MINI}${imgNota[id] > 1 ? imgNota[id] : ''}</span>` : '') +
+    (porNota[id] ? `<span class="clip" title="archivos adjuntos">${CLIP_MINI}${porNota[id] > 1 ? porNota[id] : ''}</span>` : '');
   let html = '', grupo = null;
   for (const n of lista) {
     const g = n.fijada && S.vista !== 'papelera' && !S.q ? 'fijadas' : (S.vista === 'papelera' ? 'en la papelera' : null);
@@ -680,6 +715,7 @@ function refrescarEditor(desdeServidor) {
 }
 
 function abrir(id, op = {}) {
+  ocultarSelTareas();
   if (S.actual && S.actual !== id) descartarSiVacia(S.actual);
   S.actual = id;
   const ta = $('#texto');
@@ -749,37 +785,79 @@ function palomear(i) {
 }
 // Convierte en tareas las líneas seleccionadas (o la línea actual). Si ya todas lo son, las vuelve texto.
 let ultimaSel = null;
-function alternarTareas() {
-  const n = S.notas[S.actual]; if (!n || n.borrada) return;
-  let a, b;
-  if (modo === 'editar' && ultimaSel && document.activeElement !== ta) ({ a, b } = ultimaSel);
-  else if (modo === 'editar') { a = ta.selectionStart; b = ta.selectionEnd; }
-  else {
-    const sel = getSelection(), l = $('#lectura');
-    if (sel && sel.rangeCount && !sel.isCollapsed && l.contains(sel.anchorNode)) {
-      const r = sel.getRangeAt(0), r0 = document.createRange();
-      r0.setStart(l, 0); r0.setEnd(r.startContainer, r.startOffset); a = r0.toString().length;
-      b = a + r.toString().length;
-    } else a = b = n.texto.length;
-  }
-  if (modo !== 'editar') editar(b);
-  ta.focus({ preventScroll: true });
-  const v = ta.value;
+const RE_TAREA = /^([ \t]*)[☐☑][ \t]?/;
+// Convierte en tareas las líneas entre a y b (o les quita la casilla si ya todas lo son).
+function transformarTareas(v, a, b) {
   const ini = v.lastIndexOf('\n', a - 1) + 1;
   let fin = v.indexOf('\n', b > a && v[b - 1] === '\n' ? b - 1 : b); if (fin < 0) fin = v.length;
   const bloque = v.slice(ini, fin), lineas = bloque.split('\n');
-  const RE = /^([ \t]*)[☐☑][ \t]?/;
   const conTexto = lineas.filter(x => x.trim());
-  const quitar = conTexto.length > 0 && conTexto.every(x => RE.test(x));
-  const nuevas = quitar ? lineas.map(x => x.replace(RE, '$1'))
-    : lineas.map(x => RE.test(x) || (!x.trim() && lineas.length > 1) ? x : x.replace(/^([ \t]*)(?:[-*•][ \t]+)?/, '$1☐ '));
-  const nuevo = nuevas.join('\n');
-  ta.setSelectionRange(ini, fin);
-  if (!document.execCommand('insertText', false, nuevo)) { ta.setRangeText(nuevo, ini, fin, 'end'); ta.dispatchEvent(new Event('input')); }
-  if (a === b) { const p = Math.max(ini, Math.min(ini + nuevo.length, b + nuevo.length - bloque.length)); ta.setSelectionRange(p, p); }
-  else ta.setSelectionRange(ini, ini + nuevo.length);
-  ultimaSel = null;
+  const quitar = conTexto.length > 0 && conTexto.every(x => RE_TAREA.test(x));
+  const nuevas = quitar ? lineas.map(x => x.replace(RE_TAREA, '$1'))
+    : lineas.map(x => RE_TAREA.test(x) || (!x.trim() && lineas.length > 1) ? x : x.replace(/^([ \t]*)(?:[-*•][ \t]+|\d+[.)][ \t]+)?/, '$1☐ '));
+  return { ini, fin, bloque, nuevo: nuevas.join('\n'), quitar };
 }
+// rango de texto seleccionado ahora mismo (en lectura o escribiendo), o null
+function rangoSeleccion() {
+  if (modo === 'editar' && document.activeElement === ta && ta.selectionStart !== ta.selectionEnd) return { a: ta.selectionStart, b: ta.selectionEnd };
+  const sel = getSelection(), l = $('#lectura');
+  if (modo === 'leer' && sel && sel.rangeCount && !sel.isCollapsed && l.contains(sel.anchorNode) && l.contains(sel.focusNode)) {
+    const r = sel.getRangeAt(0), r0 = document.createRange();
+    r0.setStart(l, 0); r0.setEnd(r.startContainer, r.startOffset);
+    const a = r0.toString().length;
+    return { a, b: a + r.toString().length };
+  }
+  return null;
+}
+function alternarTareas(rango) {
+  const n = S.notas[S.actual]; if (!n || n.borrada) return;
+  let { a, b } = rango || rangoSeleccion() || (modo === 'editar' ? (ultimaSel && document.activeElement !== ta ? ultimaSel : { a: ta.selectionStart, b: ta.selectionEnd }) : { a: n.texto.length, b: n.texto.length });
+  // en lectura con texto seleccionado: se cambia sin entrar a escribir
+  if (modo === 'leer' && a !== b) {
+    const t = transformarTareas(n.texto, a, b);
+    n.texto = n.texto.slice(0, t.ini) + t.nuevo + n.texto.slice(t.fin);
+    ta.value = n.texto;
+    marcar(n, true); estado('trabajando');
+    const l = $('#lectura'), arriba = l.scrollTop;
+    getSelection().removeAllRanges();
+    pintarLectura(); l.scrollTop = arriba; pintar();
+    brindis(t.quitar ? 'Ya no son tareas.' : 'Convertido en tareas.');
+    ocultarSelTareas();
+    return;
+  }
+  if (modo !== 'editar') editar(b);
+  ta.focus({ preventScroll: true });
+  const t = transformarTareas(ta.value, a, b);
+  ta.setSelectionRange(t.ini, t.fin);
+  if (!document.execCommand('insertText', false, t.nuevo)) { ta.setRangeText(t.nuevo, t.ini, t.fin, 'end'); ta.dispatchEvent(new Event('input')); }
+  const p = a === b ? Math.max(t.ini, Math.min(t.ini + t.nuevo.length, b + t.nuevo.length - t.bloque.length)) : t.ini + t.nuevo.length;
+  ta.setSelectionRange(p, p);
+  ultimaSel = null;
+  ocultarSelTareas();
+}
+// botón flotante «convertir en tareas» que aparece al seleccionar texto
+let selGuardada = null, tSel = 0;
+function ocultarSelTareas() { clearTimeout(tSel); $('#selTareas').hidden = true; selGuardada = null; }
+function revisarSeleccion() {
+  const n = S.notas[S.actual], btn = $('#selTareas');
+  const r = n && !n.borrada ? rangoSeleccion() : null;
+  if (r && n.texto.slice(r.a, r.b).trim()) {
+    clearTimeout(tSel);
+    selGuardada = r;
+    const t = transformarTareas(n.texto, r.a, r.b);
+    btn.innerHTML = (t.quitar ? '' : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><path d="M4.9 16.9l1 1 2.1-2.3"/><circle cx="6.4" cy="17" r="2.4"/><path d="M11.5 7h8.5M11.5 17h8.5"/></svg>') +
+      (t.quitar ? 'quitar casillas' : 'convertir en tareas');
+    btn.hidden = false;
+  } else if (!btn.hidden) {
+    clearTimeout(tSel); tSel = setTimeout(() => { btn.hidden = true; selGuardada = null; }, 350);
+  }
+}
+document.addEventListener('selectionchange', revisarSeleccion);
+// Safari no siempre avisa de cambios de selección dentro del área de texto
+['select', 'mouseup', 'keyup', 'touchend'].forEach(t => $('#texto').addEventListener(t, () => setTimeout(revisarSeleccion, 0)));
+$('#selTareas').addEventListener('pointerdown', e => { e.preventDefault(); clearTimeout(tSel); });
+$('#selTareas').addEventListener('mousedown', e => e.preventDefault());
+$('#selTareas').onclick = () => { const r = selGuardada; if (r) alternarTareas(r); };
 function aplicarModo() {
   const n = S.notas[S.actual]; if (!n) return;
   const l = $('#lectura');
@@ -797,6 +875,7 @@ function editar(pos) {
   if (pos != null) ta.scrollTop = arriba;
 }
 function leer() {
+  ocultarSelTareas();
   if (modo === 'leer') return;
   const arriba = ta.scrollTop;
   modo = 'leer'; aplicarModo();
@@ -814,6 +893,7 @@ function posicionEn(x, y) {
 }
 
 // ---------- archivos adjuntos ----------
+const IMG_MINI = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l4.8-4.6 3.4 3.2 2.6-2.4L20 18"/></svg>';
 const CLIP_MINI = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.6l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4a3.4 3.4 0 0 1 4.8 4.8l-8.3 8.3a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/></svg>';
 function tamano(b) { return b < 1024 ? b + ' B' : b < MB ? Math.round(b / 1024) + ' KB' : (b / MB).toFixed(b < 10 * MB ? 1 : 0) + ' MB'; }
 function vence(ms) {
@@ -821,14 +901,65 @@ function vence(ms) {
   return d <= 0 ? 'se borra hoy' : d === 1 ? 'se borra mañana' : 'se borra en ' + d + ' días';
 }
 function extension(nombre) { const m = /\.([a-z0-9]{1,5})$/i.exec(nombre || ''); return m ? m[1] : 'arch'; }
+function pintarImagenes() {
+  const n = S.notas[S.actual], caja = $('#imagenes');
+  if (!n) { caja.hidden = true; return; }
+  const lista = imagenesDe(n.id).sort((a, b) => a.subido - b.subido);
+  const sub = Object.entries(subidas).filter(([, x]) => x.nota === n.id && x.ref);
+  caja.hidden = !lista.length && !sub.length;
+  const firma = JSON.stringify([lista.map(a => a.id), sub.map(([k, x]) => [k, x.hecho, x.error])]);
+  if (caja._firma === firma) return;            // no recargar las miniaturas sin necesidad
+  caja._firma = firma;
+  caja.innerHTML = lista.map(a => `<button class="mini" data-img="${a.id}" title="${esc(a.nombre)}"><img src="${esc(srcArchivo(a.id, true))}" alt="" loading="lazy" decoding="async"></button>`).join('') +
+    sub.map(([k, x]) => x.error
+      ? `<div class="mini subiendo error" data-cancelar-s="${k}" title="Toca para quitar">${esc(x.error)}</div>`
+      : `<div class="mini subiendo">${Math.floor(100 * x.hecho / Math.max(1, x.tam))} %<span class="barraProg" style="width:${100 * x.hecho / Math.max(1, x.tam)}%"></span></div>`).join('');
+}
+// Reduce la imagen en el equipo antes de subirla: 800 px por lado, WebP (o JPEG) al 72 %.
+// Una foto de 4 MB queda en unos 40–90 KB.
+const LADO_IMG = 800;
+async function reducirImagen(f) {
+  let fuente, url;
+  try { fuente = await createImageBitmap(f, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    url = URL.createObjectURL(f);
+    fuente = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('no es una imagen que el navegador pueda abrir')); i.src = url; });
+  }
+  const w0 = fuente.width, h0 = fuente.height, k = Math.min(1, LADO_IMG / Math.max(w0, h0));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w0 * k)); c.height = Math.max(1, Math.round(h0 * k));
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(fuente, 0, 0, c.width, c.height);
+  if (url) URL.revokeObjectURL(url);
+  if (fuente.close) fuente.close();
+  let b = await new Promise(r => c.toBlob(r, 'image/webp', 0.72));
+  if (!b || b.type !== 'image/webp') b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.72));
+  if (!b) throw new Error('no se pudo reducir');
+  const base = (f.name || 'imagen').replace(/\.[a-z0-9]{1,5}$/i, '') || 'imagen';
+  return new File([b], base + (b.type === 'image/webp' ? '.webp' : '.jpg'), { type: b.type });
+}
+function verImagen(id) {
+  const a = S.archivos[id]; if (!a) return;
+  dialogo(a.nombre, `<div class="visor"><img src="${esc(srcArchivo(id, true))}" alt="${esc(a.nombre)}">
+    <div class="fila"><small>${tamano(a.tam)} · referencia en baja resolución</small>
+    <span class="fila"><button class="bt" data-borrar-img>borrar</button><a class="bt" href="${esc(srcArchivo(id))}" download="${esc(a.nombre)}">descargar</a></span></div></div>`,
+    (capa, cerrar) => {
+      capa.querySelector('.ventana').classList.add('ancha');
+      capa.querySelector('[data-borrar-img]').onclick = () => { cerrar(); borrarAdjunto(id); };
+    });
+}
+
 function pintarAdjuntos() {
   const n = S.notas[S.actual], caja = $('#adjuntos');
-  if (!n) { caja.hidden = true; return; }
-  const lista = archivosDe(n.id).sort((a, b) => a.subido - b.subido);
-  const sub = Object.entries(subidas).filter(([, x]) => x.nota === n.id);
+  if (!n) { caja.hidden = true; $('#imagenes').hidden = true; return; }
+  pintarImagenes();
+  const lista = adjuntosDe(n.id).sort((a, b) => a.subido - b.subido);
+  const sub = Object.entries(subidas).filter(([, x]) => x.nota === n.id && !x.ref);
   caja.hidden = !lista.length && !sub.length;
   caja.innerHTML = lista.map(a => {
-    const img = /^image\/(png|jpeg|gif|webp|avif)$/.test(a.tipo) ? ` style="background-image:url('api.php?a=archivo&amp;ver=1&amp;id=${a.id}')"` : '';
+    const img = /^image\/(png|jpeg|gif|webp|avif)$/.test(a.tipo) ? ` style="background-image:url('${esc(srcArchivo(a.id, true))}')"` : '';
     const pronto = a.expira - Date.now() < 3 * 864e5;
     return `<div class="adj" data-f="${a.id}"><a href="api.php?a=archivo&amp;id=${a.id}" download="${esc(a.nombre)}" title="Descargar ${esc(a.nombre)}">
       <span class="ext"${img}>${img ? '' : esc(extension(a.nombre))}</span>
@@ -840,7 +971,7 @@ function pintarAdjuntos() {
       <button class="adjX" data-cancelar-s="${k}" title="${x.error ? 'Quitar' : 'Cancelar'}" aria-label="Cancelar">×</button>
       ${x.error ? '' : `<span class="barraProg" style="width:${100 * x.hecho / Math.max(1, x.tam)}%"></span>`}</div>`).join('');
 }
-async function subirArchivos(archivos, nota) {
+async function subirArchivos(archivos, nota, ref) {
   archivos = [...archivos];
   if (!archivos.length) return;
   if (!nota) { nota = nueva(); ta.blur(); modo = 'leer'; aplicarModo(); }
@@ -848,13 +979,14 @@ async function subirArchivos(archivos, nota) {
   if (!sesion || !navigator.onLine) { brindis('Para subir archivos necesitas conexión.'); return; }
   // que la nota exista en el servidor aunque no tenga texto
   if (!nota.srv) marcar(nota, false);
-  for (const f of archivos) {
+  for (let f of archivos) {
     const k = 's' + Math.random().toString(36).slice(2);
-    subidas[k] = { nota: nota.id, nombre: f.name || 'archivo', tam: f.size, hecho: 0 };
-    if (f.size > MAX_MB * MB) { subidas[k].error = 'pasa de ' + MAX_MB + ' MB'; pintarAdjuntos(); continue; }
+    subidas[k] = { nota: nota.id, nombre: f.name || 'archivo', tam: f.size, hecho: 0, ref: !!ref };
+    if (!ref && f.size > MAX_MB * MB) { subidas[k].error = 'pasa de ' + MAX_MB + ' MB'; pintarAdjuntos(); continue; }
     pintarAdjuntos();
     try {
-      const ini = await api('subir-inicio', { nota: nota.id, nombre: f.name, tam: f.size, tipo: f.type || '' });
+      if (ref) { f = await reducirImagen(f); Object.assign(subidas[k], { nombre: f.name, tam: f.size }); }
+      const ini = await api('subir-inicio', { nota: nota.id, nombre: f.name, tam: f.size, tipo: f.type || '', ref: !!ref });
       subidas[k].id = ini.id;
       const parte = ini.parte || MB;
       for (let desde = 0; desde < f.size || (f.size === 0 && desde === 0); desde += parte) {
@@ -887,11 +1019,12 @@ async function subirArchivos(archivos, nota) {
     }
     pintarAdjuntos(); pintar();
   }
-  if (!Object.values(subidas).some(x => !x.error)) brindis(archivos.length === 1 ? 'Archivo listo. Se borra solo en 30 días.' : 'Archivos listos. Se borran solos en 30 días.');
+  if (!Object.values(subidas).some(x => !x.error)) brindis(ref ? (archivos.length === 1 ? 'Imagen agregada.' : 'Imágenes agregadas.')
+    : archivos.length === 1 ? 'Archivo listo. Se borra solo en 30 días.' : 'Archivos listos. Se borran solos en 30 días.');
 }
 async function borrarAdjunto(id) {
   const a = S.archivos[id]; if (!a) return;
-  if (!(await confirmar('«' + a.nombre + '» se borrará de todos tus equipos. La nota se queda.', 'borrar archivo'))) return;
+  if (!(await confirmar((a.ref ? 'La imagen' : '«' + a.nombre + '»') + ' se borrará de todos tus equipos. La nota se queda.', a.ref ? 'borrar imagen' : 'borrar archivo'))) return;
   try { await api('borrar-archivo', { id }); delete S.archivos[id]; guardarLocal(); pintarAdjuntos(); pintar(); }
   catch (e) { brindis(e.sesion ? 'Inicia sesión para borrar.' : 'Sin conexión: no se pudo borrar.'); }
 }
@@ -1101,7 +1234,7 @@ function cambiarClave() {
 
 function acerca() {
   dialogo('i · LaNotaMia', `<div class="acerca">
-    <p><b>LaNotaMia</b> 0.4 · notas de texto en tu propio servidor, iguales en el teléfono, la tableta y cualquier computadora. Adjunta archivos de hasta 20 MB para pasarlos entre equipos: se borran solos al mes.</p>
+    <p><b>LaNotaMia</b> 0.5 · notas de texto en tu propio servidor, iguales en el teléfono, la tableta y cualquier computadora. Imágenes de referencia en baja resolución y archivos de hasta 20 MB para pasarlos entre equipos (estos se borran solos al mes).</p>
     <p>Diseño, investigación y desarrollo: <b>Héctor Cruz Juárez</b> — <a href="https://hectorcruz.com.mx" target="_blank" rel="noopener">https://hectorcruz.com.mx</a><br><span class="g">Colección Alchemy of Meaning.</span></p>
     <p><b>Héctor Cruz Juárez</b> es diseñador multimedia y de proyección para artes escénicas, con más de 26 años de trayectoria y más de 110 producciones en distintos países. Director de arte multimedia de Landscape Artes Escénicas, cofundador de Meridiano Studio y de la comunidad Resonancias, Embajador de Isadora para América Latina y creador de la metodología TCRV (World Summit Award, WSA, 2020). Miembro del Sistema Nacional de Creadores de Arte.</p>
     <p class="g">© 2026 Héctor Cruz Juárez. Software libre: puedes usarlo, estudiarlo, modificarlo y compartirlo bajo los términos de la licencia GNU GPL versión 3 o posterior (GPL-3.0-or-later). Se ofrece sin ninguna garantía.</p>
@@ -1178,10 +1311,24 @@ $('#lectura').addEventListener('keydown', e => {
 // el botón de tareas no debe quitarle el foco a la nota mientras escribes
 ta.addEventListener('blur', () => { ultimaSel = { a: ta.selectionStart, b: ta.selectionEnd }; });
 $('#bTareas').addEventListener('mousedown', e => e.preventDefault());
-$('#bTareas').onclick = alternarTareas;
+$('#bTareas').onclick = () => alternarTareas();
 $('#bListo').onclick = () => { ta.blur(); leer(); };
 $('#bNueva2').onclick = nueva;
 $('#bAdjuntar').onclick = () => $('#fArchivo').click();
+$('#bImagen').onclick = () => $('#fImagen').click();
+$('#fImagen').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; subirArchivos(fs, S.notas[S.actual], true); };
+$('#imagenes').addEventListener('click', e => {
+  const m = e.target.closest('[data-img]'); if (m) { verImagen(m.dataset.img); return; }
+  const c = e.target.closest('[data-cancelar-s]'); if (c) { delete subidas[c.dataset.cancelarS]; pintarImagenes(); }
+});
+// imágenes → referencia en baja resolución; lo demás → adjunto de 30 días
+function repartir(fs, nota) {
+  fs = [...fs];
+  const img = fs.filter(f => /^image\//.test(f.type)), otros = fs.filter(f => !/^image\//.test(f.type));
+  if (!nota && fs.length) { nota = nueva(); ta.blur(); modo = 'leer'; aplicarModo(); }
+  if (img.length) subirArchivos(img, nota, true);
+  if (otros.length) subirArchivos(otros, nota);
+}
 $('#fArchivo').onchange = e => { const fs = e.target.files; subirArchivos(fs, S.notas[S.actual]); e.target.value = ''; };
 $('#adjuntos').addEventListener('click', e => {
   const b = e.target.closest('[data-borrar-f]'); if (b) { e.preventDefault(); borrarAdjunto(b.dataset.borrarF); return; }
@@ -1197,14 +1344,14 @@ $('#adjuntos').addEventListener('click', e => {
     if (!e.dataTransfer.files.length) return;
     e.preventDefault(); el.classList.remove('soltar');
     const n = zona === 'editor' ? S.notas[S.actual] : null;
-    subirArchivos(e.dataTransfer.files, n && !n.borrada ? n : null);
+    repartir(e.dataTransfer.files, n && !n.borrada ? n : null);
   });
 });
 // pegar un archivo o captura (Ctrl/Cmd+V) también lo adjunta
 document.addEventListener('paste', e => {
   const fs = e.clipboardData && e.clipboardData.files;
   if (!sesion || !fs || !fs.length || !S.notas[S.actual]) return;
-  e.preventDefault(); subirArchivos(fs, S.notas[S.actual]);
+  e.preventDefault(); repartir(fs, S.notas[S.actual]);
 });
 ta.addEventListener('input', () => {
   const n = S.notas[S.actual]; if (!n || n.borrada) return;
